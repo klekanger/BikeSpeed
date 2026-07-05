@@ -10,9 +10,14 @@ struct GaugeFaceView: View {
 
     private let startAngle: Double = -135
     private let sweepAngle: Double = 270
-    private let majorDivisions = 10
     private let minorPerMajor = 5
     private let dangerStartFraction = 0.85
+    /// Candidate spacings for major ticks, ascending — always a "nice" round number so labels
+    /// read as multiples of 5, 10, 25, etc. rather than of whatever `maxSpeed` happens to be.
+    private let majorStepCandidates: [Double] = [5, 10, 15, 20, 25, 50, 100]
+    /// Upper bound on the number of major ticks, so the scale doesn't get too fine-grained
+    /// for large `maxSpeed` values.
+    private let maxMajorDivisions = 10.0
 
     var body: some View {
         Canvas { context, size in
@@ -58,12 +63,23 @@ struct GaugeFaceView: View {
         context.stroke(path, with: .color(.orange), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
     }
 
+    /// Picks the finest step (from `majorStepCandidates`) that still keeps the major tick
+    /// count at or below `maxMajorDivisions`. The step need not evenly divide `maxSpeed` —
+    /// ticks are placed by their actual fraction of the scale, so the last one or two minor
+    /// ticks before the top of the dial may simply be omitted, same as on a real gauge.
+    private func majorStep(for maxSpeed: Double) -> Double {
+        let minStep = maxSpeed / maxMajorDivisions
+        return majorStepCandidates.first(where: { $0 >= minStep }) ?? majorStepCandidates.last!
+    }
+
     private func drawTicksAndLabels(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
-        let majorStep = maxSpeed / Double(majorDivisions)
-        let totalMinorTicks = majorDivisions * minorPerMajor
+        let step = majorStep(for: maxSpeed)
+        let minorStep = step / Double(minorPerMajor)
+        let totalMinorTicks = Int((maxSpeed / minorStep).rounded(.down))
 
         for i in 0...totalMinorTicks {
-            let fraction = Double(i) / Double(totalMinorTicks)
+            let value = Double(i) * minorStep
+            let fraction = value / maxSpeed
             let isMajor = i % minorPerMajor == 0
             let outer = radius * 0.88
             let inner = isMajor ? radius * 0.76 : radius * 0.82
@@ -82,7 +98,6 @@ struct GaugeFaceView: View {
             context.stroke(tickPath, with: .color(color), lineWidth: tickWidth)
 
             if isMajor {
-                let value = majorStep * Double(i / minorPerMajor)
                 let labelPoint = point(center: center, radius: radius * 0.64, angle: angle)
                 context.draw(
                     Text(formattedTickLabel(value))
