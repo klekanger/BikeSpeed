@@ -64,7 +64,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(settings.appLanguage.localizedString(forKey: "Settings"))
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
