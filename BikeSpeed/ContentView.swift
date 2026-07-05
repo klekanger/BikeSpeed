@@ -8,17 +8,82 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var locationManager: LocationManager
+    @EnvironmentObject private var settingsStore: SettingsStore
+    @EnvironmentObject private var tripManager: TripManager
+
+    @State private var isShowingSettings = false
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                Spacer(minLength: 8)
+
+                SpeedometerGaugeView(
+                    speed: locationManager.displaySpeed,
+                    maxGaugeSpeedKMH: settingsStore.maxGaugeSpeedKMH,
+                    measurementSystem: settingsStore.measurementSystem
+                )
+                .frame(maxWidth: 320)
+
+                HStack {
+                    DigitalSpeedReadoutView(
+                        speed: locationManager.displaySpeed,
+                        measurementSystem: settingsStore.measurementSystem
+                    )
+                    Spacer()
+                    DirectionIndicatorView(course: locationManager.course)
+                }
+                .padding(.horizontal)
+
+                StatsPanel(
+                    averageSpeed: tripManager.averageSpeed,
+                    distance: tripManager.accumulatedDistance,
+                    altitude: locationManager.altitude,
+                    coordinate: locationManager.coordinate,
+                    measurementSystem: settingsStore.measurementSystem
+                )
+                .padding(.horizontal)
+
+                Spacer()
+
+                TripControlBar(tripManager: tripManager)
+                    .padding(.bottom, 12)
+            }
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.secondary)
+                            .padding(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
         }
-        .padding()
+        .statusBarHidden(true)
+        .persistentSystemOverlays(.hidden)
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true
+            locationManager.requestAuthorization()
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView(settings: settingsStore)
+        }
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(LocationManager())
+        .environmentObject(SettingsStore())
+        .environmentObject(TripManager(locationManager: LocationManager()))
 }
