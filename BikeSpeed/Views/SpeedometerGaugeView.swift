@@ -6,6 +6,8 @@ struct SpeedometerGaugeView: View {
     let maxGaugeSpeedKMH: Double
     let measurementSystem: MeasurementSystem
 
+    @Environment(\.locale) private var locale
+
     private var maxSpeedInDisplayUnit: Double {
         measurementSystem.maxGaugeSpeedValue(fromCanonicalKMH: maxGaugeSpeedKMH)
     }
@@ -37,7 +39,7 @@ struct SpeedometerGaugeView: View {
                     .frame(width: side * 0.12, height: side * 0.12)
 
                 VStack(spacing: side * 0.01) {
-                    Text(measurementSystem.gaugeUnitLabel)
+                    Text(measurementSystem.gaugeUnitLabel(locale: locale))
                         .font(.system(size: side * 0.05, weight: .medium))
                         .foregroundStyle(.secondary)
                     Image(systemName: "bicycle")

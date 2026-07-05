@@ -4,6 +4,13 @@ struct SettingsView: View {
     @ObservedObject var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
 
+    /// Sourced from `settings.appLanguage` directly rather than `@Environment(\.locale)`, matching the
+    /// nav title above — see `AppLanguage.localizedString(forKey:)` for why this view can't rely on the
+    /// ambient environment locale.
+    private var locale: Locale {
+        settings.appLanguage.locale ?? Locale.autoupdatingCurrent
+    }
+
     private var maxGaugeSpeedBinding: Binding<Double> {
         Binding(
             get: { settings.measurementSystem.maxGaugeSpeedValue(fromCanonicalKMH: settings.maxGaugeSpeedKMH) },
@@ -41,7 +48,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Max speed")
                             Spacer()
-                            Text(settings.measurementSystem.formattedMaxGaugeSpeed(fromCanonicalKMH: settings.maxGaugeSpeedKMH))
+                            Text(settings.measurementSystem.formattedMaxGaugeSpeed(fromCanonicalKMH: settings.maxGaugeSpeedKMH, locale: locale))
                                 .foregroundStyle(.secondary)
                         }
                     }

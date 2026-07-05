@@ -8,22 +8,24 @@ struct StatsPanel: View {
     let coordinate: CLLocationCoordinate2D?
     let measurementSystem: MeasurementSystem
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
         VStack(spacing: 10) {
             StatRow(
                 systemImage: "speedometer",
                 label: "Average speed",
-                value: measurementSystem.formattedSpeed(metersPerSecond: averageSpeed)
+                value: measurementSystem.formattedSpeed(metersPerSecond: averageSpeed, locale: locale)
             )
             StatRow(
                 systemImage: "point.topleft.down.curvedto.point.bottomright.up",
                 label: "Distance",
-                value: measurementSystem.formattedDistance(meters: distance)
+                value: measurementSystem.formattedDistance(meters: distance, locale: locale)
             )
             StatRow(
                 systemImage: "mountain.2",
                 label: "Altitude",
-                value: altitude.map(measurementSystem.formattedAltitude) ?? "--"
+                value: altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
             )
             StatRow(
                 systemImage: "location",

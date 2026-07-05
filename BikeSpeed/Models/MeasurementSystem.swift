@@ -27,10 +27,15 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Center-of-gauge unit label, e.g. "KM/H" / "MPH".
-    var gaugeUnitLabel: String {
+    /// Center-of-gauge unit label, e.g. "KM/H" / "KM/T" / "MPH".
+    ///
+    /// Not sourced from Foundation's locale-aware `Measurement` formatting: that produces "km/hr"
+    /// (English) and "mile/t" (Norwegian) for this unit via `MeasurementFormatter`, neither of which
+    /// matches the abbreviations riders expect, so the two supported languages are hardcoded instead.
+    func gaugeUnitLabel(locale: Locale) -> String {
+        let isNorwegian = locale.language.languageCode == Locale.LanguageCode("nb")
         switch self {
-        case .metric: return "KM/H"
+        case .metric: return isNorwegian ? "KM/T" : "KM/H"
         case .imperial: return "MPH"
         }
     }
@@ -41,22 +46,27 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
             .value
     }
 
-    func formattedSpeed(metersPerSecond: Double, fractionDigits: Int = 1) -> String {
-        Measurement(value: metersPerSecond, unit: UnitSpeed.metersPerSecond)
-            .converted(to: speedUnit)
-            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(fractionDigits))))
+    /// Formats speed as "<value> <unit>", e.g. "24.3 km/h" / "24,3 km/t" / "15.1 mph".
+    ///
+    /// Builds the unit suffix from `gaugeUnitLabel` rather than `Measurement`'s locale-aware
+    /// formatting: the latter renders mph as "miles/t" in Norwegian, which isn't one of this app's
+    /// two supported unit labels (see `gaugeUnitLabel`'s doc comment for the metric equivalent).
+    func formattedSpeed(metersPerSecond: Double, fractionDigits: Int = 1, locale: Locale) -> String {
+        let value = speedValue(metersPerSecond: metersPerSecond)
+        let formattedValue = value.formatted(.number.precision(.fractionLength(fractionDigits)).locale(locale))
+        return "\(formattedValue) \(gaugeUnitLabel(locale: locale).lowercased())"
     }
 
-    func formattedDistance(meters: Double) -> String {
+    func formattedDistance(meters: Double, locale: Locale) -> String {
         Measurement(value: meters, unit: UnitLength.meters)
             .converted(to: distanceUnit)
-            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(2))))
+            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(2))).locale(locale))
     }
 
-    func formattedAltitude(meters: Double) -> String {
+    func formattedAltitude(meters: Double, locale: Locale) -> String {
         Measurement(value: meters, unit: UnitLength.meters)
             .converted(to: altitudeUnit)
-            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))))
+            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))).locale(locale))
     }
 
     /// Converts a gauge max speed stored canonically in km/h into this system's speed unit (for display/stepper use).
@@ -67,10 +77,12 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
     }
 
     /// Formats a gauge max speed stored canonically in km/h in this system's speed unit.
-    func formattedMaxGaugeSpeed(fromCanonicalKMH kmh: Double, fractionDigits: Int = 0) -> String {
-        Measurement(value: kmh, unit: UnitSpeed.kilometersPerHour)
-            .converted(to: speedUnit)
-            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(fractionDigits))))
+    /// See `formattedSpeed` for why the unit suffix comes from `gaugeUnitLabel` rather than
+    /// `Measurement`'s own locale-aware formatting.
+    func formattedMaxGaugeSpeed(fromCanonicalKMH kmh: Double, fractionDigits: Int = 0, locale: Locale) -> String {
+        let value = maxGaugeSpeedValue(fromCanonicalKMH: kmh)
+        let formattedValue = value.formatted(.number.precision(.fractionLength(fractionDigits)).locale(locale))
+        return "\(formattedValue) \(gaugeUnitLabel(locale: locale).lowercased())"
     }
 
     /// Converts a gauge max speed expressed in this system's speed unit back into canonical km/h (for stepper use).
