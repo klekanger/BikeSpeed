@@ -34,8 +34,16 @@ struct SpeedometerGaugeView: View {
                     .animation(.interactiveSpring(response: 0.4, dampingFraction: 0.7), value: needleAngle)
 
                 Circle()
-                    .fill(Color(white: 0.15))
-                    .overlay(Circle().stroke(Color(white: 0.35), lineWidth: side * 0.01))
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(white: 0.8), Color(white: 0.4), Color(white: 0.12)],
+                            center: UnitPoint(x: 0.35, y: 0.32),
+                            startRadius: 0,
+                            endRadius: side * 0.07
+                        )
+                    )
+                    .overlay(Circle().stroke(Color(white: 0.55), lineWidth: side * 0.004))
+                    .shadow(color: .black.opacity(0.5), radius: side * 0.008, x: 0, y: side * 0.004)
                     .frame(width: side * 0.12, height: side * 0.12)
 
                 VStack(spacing: side * 0.01) {

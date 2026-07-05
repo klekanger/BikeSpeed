@@ -45,9 +45,20 @@ struct GaugeFaceView: View {
         let rect = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
         context.fill(
             Path(ellipseIn: rect),
-            with: .radialGradient(Gradient(colors: [Color(white: 0.1), .black]), center: center, startRadius: 0, endRadius: radius)
+            with: .radialGradient(Gradient(colors: [Color(white: 0.15), .gaugeFaceCenter]), center: center, startRadius: 0, endRadius: radius)
         )
-        context.stroke(Path(ellipseIn: rect), with: .color(Color(white: 0.3)), lineWidth: radius * 0.05)
+        context.stroke(
+            Path(ellipseIn: rect),
+            with: .conicGradient(
+                Gradient(colors: [
+                    Color(white: 0.8), Color(white: 0.25), Color(white: 0.9),
+                    Color(white: 0.2), Color(white: 0.65), Color(white: 0.3),
+                    Color(white: 0.8),
+                ]),
+                center: center
+            ),
+            lineWidth: radius * 0.05
+        )
     }
 
     private func drawDangerArc(context: GraphicsContext, center: CGPoint, radius: CGFloat) {

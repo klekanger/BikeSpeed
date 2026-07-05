@@ -6,6 +6,7 @@ struct NeedleView: View {
     var body: some View {
         NeedleShape()
             .fill(Color.orange)
+            .shadow(color: .black.opacity(0.45), radius: 2, x: 0, y: 1.5)
     }
 }
 
@@ -14,7 +15,7 @@ private struct NeedleShape: Shape {
         let center = CGPoint(x: rect.midX, y: rect.midY)
         let tipLength = rect.height * 0.42
         let tailLength = rect.height * 0.06
-        let baseWidth = rect.width * 0.04
+        let baseWidth = rect.width * 0.055
 
         var path = Path()
         path.move(to: CGPoint(x: center.x - baseWidth / 2, y: center.y))
