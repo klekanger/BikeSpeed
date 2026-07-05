@@ -18,6 +18,7 @@ struct StatRow: View {
             Text(value)
                 .foregroundStyle(.white)
                 .fontWeight(.semibold)
+                .multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

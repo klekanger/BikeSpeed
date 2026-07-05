@@ -28,6 +28,15 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+
+                Section("Language") {
+                    Picker("Language", selection: $settings.appLanguage) {
+                        Text("System language").tag(AppLanguage.system)
+                        Text(verbatim: "Norsk").tag(AppLanguage.norwegian)
+                        Text(verbatim: "English").tag(AppLanguage.english)
+                    }
+                    .pickerStyle(.segmented)
+                }
             }
             .navigationTitle("Settings")
             .toolbar {

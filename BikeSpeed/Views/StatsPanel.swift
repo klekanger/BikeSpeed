@@ -39,7 +39,7 @@ struct StatsPanel: View {
         let lonHemisphere = coordinate.longitude >= 0 ? "E" : "W"
         let lat = String(format: "%.6f°", abs(coordinate.latitude))
         let lon = String(format: "%.6f°", abs(coordinate.longitude))
-        return "\(lat) \(latHemisphere), \(lon) \(lonHemisphere)"
+        return "\(lat) \(latHemisphere)\n \(lon) \(lonHemisphere)"
     }
 }
 

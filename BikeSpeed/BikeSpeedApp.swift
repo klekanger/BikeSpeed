@@ -25,6 +25,7 @@ struct BikeSpeedApp: App {
                 .environmentObject(locationManager)
                 .environmentObject(settingsStore)
                 .environmentObject(tripManager)
+                .environment(\.locale, settingsStore.appLanguage.locale ?? Locale.autoupdatingCurrent)
         }
     }
 }

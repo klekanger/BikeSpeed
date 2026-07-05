@@ -50,13 +50,13 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
     func formattedDistance(meters: Double) -> String {
         Measurement(value: meters, unit: UnitLength.meters)
             .converted(to: distanceUnit)
-            .formatted(.measurement(width: .abbreviated, numberFormatStyle: .number.precision(.fractionLength(2))))
+            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(2))))
     }
 
     func formattedAltitude(meters: Double) -> String {
         Measurement(value: meters, unit: UnitLength.meters)
             .converted(to: altitudeUnit)
-            .formatted(.measurement(width: .abbreviated, numberFormatStyle: .number.precision(.fractionLength(0))))
+            .formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
     /// Converts a gauge max speed stored canonically in km/h into this system's speed unit (for display/stepper use).

@@ -8,6 +8,7 @@ final class SettingsStore: ObservableObject {
     private enum Keys {
         static let maxGaugeSpeedKMH = "maxGaugeSpeedKMH"
         static let measurementSystem = "measurementSystem"
+        static let appLanguage = "appLanguage"
     }
 
     @Published var maxGaugeSpeedKMH: Double {
@@ -18,10 +19,16 @@ final class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(measurementSystem.rawValue, forKey: Keys.measurementSystem) }
     }
 
+    @Published var appLanguage: AppLanguage {
+        didSet { UserDefaults.standard.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         maxGaugeSpeedKMH = (defaults.object(forKey: Keys.maxGaugeSpeedKMH) as? Double) ?? 60
         measurementSystem = defaults.string(forKey: Keys.measurementSystem)
             .flatMap(MeasurementSystem.init(rawValue:)) ?? .metric
+        appLanguage = defaults.string(forKey: Keys.appLanguage)
+            .flatMap(AppLanguage.init(rawValue:)) ?? .system
     }
 }
