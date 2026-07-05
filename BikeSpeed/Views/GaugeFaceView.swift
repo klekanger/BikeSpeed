@@ -101,7 +101,7 @@ struct GaugeFaceView: View {
                 let labelPoint = point(center: center, radius: radius * 0.64, angle: angle)
                 context.draw(
                     Text(formattedTickLabel(value))
-                        .font(.system(size: radius * 0.13, weight: .semibold))
+                        .font(.system(size: radius * 0.16, weight: .semibold))
                         .foregroundColor(.white),
                     at: labelPoint
                 )

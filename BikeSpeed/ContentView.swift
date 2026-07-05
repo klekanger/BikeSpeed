@@ -19,7 +19,7 @@ struct ContentView: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 10) {
-                Spacer(minLength: 8)
+                Spacer(minLength: 4)
 
                 SpeedometerGaugeView(
                     speed: locationManager.displaySpeed,
