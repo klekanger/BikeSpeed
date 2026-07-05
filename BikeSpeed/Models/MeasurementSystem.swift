@@ -52,9 +52,7 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
     /// formatting: the latter renders mph as "miles/t" in Norwegian, which isn't one of this app's
     /// two supported unit labels (see `gaugeUnitLabel`'s doc comment for the metric equivalent).
     func formattedSpeed(metersPerSecond: Double, fractionDigits: Int = 1, locale: Locale) -> String {
-        let value = speedValue(metersPerSecond: metersPerSecond)
-        let formattedValue = value.formatted(.number.precision(.fractionLength(fractionDigits)).locale(locale))
-        return "\(formattedValue) \(gaugeUnitLabel(locale: locale).lowercased())"
+        formattedSpeedValue(speedValue(metersPerSecond: metersPerSecond), fractionDigits: fractionDigits, locale: locale)
     }
 
     func formattedDistance(meters: Double, locale: Locale) -> String {
@@ -80,7 +78,11 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
     /// See `formattedSpeed` for why the unit suffix comes from `gaugeUnitLabel` rather than
     /// `Measurement`'s own locale-aware formatting.
     func formattedMaxGaugeSpeed(fromCanonicalKMH kmh: Double, fractionDigits: Int = 0, locale: Locale) -> String {
-        let value = maxGaugeSpeedValue(fromCanonicalKMH: kmh)
+        formattedSpeedValue(maxGaugeSpeedValue(fromCanonicalKMH: kmh), fractionDigits: fractionDigits, locale: locale)
+    }
+
+    /// Formats an already-converted speed value with this system's unit suffix.
+    private func formattedSpeedValue(_ value: Double, fractionDigits: Int, locale: Locale) -> String {
         let formattedValue = value.formatted(.number.precision(.fractionLength(fractionDigits)).locale(locale))
         return "\(formattedValue) \(gaugeUnitLabel(locale: locale).lowercased())"
     }

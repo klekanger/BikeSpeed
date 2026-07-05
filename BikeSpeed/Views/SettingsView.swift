@@ -3,13 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
-
-    /// Sourced from `settings.appLanguage` directly rather than `@Environment(\.locale)`, matching the
-    /// nav title above — see `AppLanguage.localizedString(forKey:)` for why this view can't rely on the
-    /// ambient environment locale.
-    private var locale: Locale {
-        settings.appLanguage.locale ?? Locale.autoupdatingCurrent
-    }
+    @Environment(\.locale) private var locale
 
     private var maxGaugeSpeedBinding: Binding<Double> {
         Binding(
