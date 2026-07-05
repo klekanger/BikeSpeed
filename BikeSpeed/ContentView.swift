@@ -18,7 +18,7 @@ struct ContentView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 10) {
                 Spacer(minLength: 8)
 
                 SpeedometerGaugeView(
@@ -26,7 +26,7 @@ struct ContentView: View {
                     maxGaugeSpeedKMH: settingsStore.maxGaugeSpeedKMH,
                     measurementSystem: settingsStore.measurementSystem
                 )
-                .frame(maxWidth: 320)
+                .frame(maxWidth: .infinity)
 
                 HStack {
                     DigitalSpeedReadoutView(
@@ -68,8 +68,8 @@ struct ContentView: View {
                 Spacer()
             }
         }
-        .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
+        .preferredColorScheme(.dark)
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
             locationManager.requestAuthorization()
