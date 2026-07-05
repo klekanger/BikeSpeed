@@ -12,6 +12,7 @@ struct BikeSpeedApp: App {
     @StateObject private var locationManager: LocationManager
     @StateObject private var settingsStore = SettingsStore()
     @StateObject private var tripManager: TripManager
+    @StateObject private var motionManager = MotionManager()
 
     init() {
         let locationManager = LocationManager()
@@ -25,6 +26,7 @@ struct BikeSpeedApp: App {
                 .environmentObject(locationManager)
                 .environmentObject(settingsStore)
                 .environmentObject(tripManager)
+                .environmentObject(motionManager)
                 .environment(\.locale, settingsStore.appLanguage.locale ?? Locale.autoupdatingCurrent)
         }
     }

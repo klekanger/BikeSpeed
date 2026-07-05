@@ -2,9 +2,13 @@ import SwiftUI
 
 /// Draws the static dial: background, tick marks, numeric labels, and the danger-zone arc.
 /// Deliberately separate from the needle so the (comparatively expensive) Canvas redraw only
-/// happens when `maxSpeed` changes, not on every GPS update.
+/// happens when `maxSpeed` changes or `tilt` drifts, not on every GPS update. `tilt` is a small,
+/// heavily-smoothed accelerometer vector (see `MotionManager`) that nudges the metallic gradients
+/// so the bezel/face look like they catch light as the phone moves — it is already throttled and
+/// low-pass filtered upstream, so redrawing on every change stays cheap.
 struct GaugeFaceView: View {
     let maxSpeed: Double
+    var tilt: CGSize = .zero
 
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
@@ -43,9 +47,10 @@ struct GaugeFaceView: View {
 
     private func drawFace(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         let rect = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+        let lightCenter = CGPoint(x: center.x + tilt.width * radius * 0.35, y: center.y + tilt.height * radius * 0.35)
         context.fill(
             Path(ellipseIn: rect),
-            with: .radialGradient(Gradient(colors: [Color(white: 0.15), .gaugeFaceCenter]), center: center, startRadius: 0, endRadius: radius)
+            with: .radialGradient(Gradient(colors: [Color(white: 0.15), .gaugeFaceCenter]), center: lightCenter, startRadius: 0, endRadius: radius)
         )
         context.stroke(
             Path(ellipseIn: rect),
@@ -55,7 +60,8 @@ struct GaugeFaceView: View {
                     Color(white: 0.2), Color(white: 0.65), Color(white: 0.3),
                     Color(white: 0.8),
                 ]),
-                center: center
+                center: center,
+                angle: .radians(tilt.width * 1.1)
             ),
             lineWidth: radius * 0.05
         )

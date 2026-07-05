@@ -85,4 +85,5 @@ struct ContentView: View {
         .environmentObject(LocationManager())
         .environmentObject(SettingsStore())
         .environmentObject(TripManager(locationManager: LocationManager()))
+        .environmentObject(MotionManager())
 }

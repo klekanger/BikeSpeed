@@ -7,6 +7,7 @@ struct SpeedometerGaugeView: View {
     let measurementSystem: MeasurementSystem
 
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var motionManager: MotionManager
 
     private var maxSpeedInDisplayUnit: Double {
         measurementSystem.maxGaugeSpeedValue(fromCanonicalKMH: maxGaugeSpeedKMH)
@@ -26,7 +27,7 @@ struct SpeedometerGaugeView: View {
             let side = min(geo.size.width, geo.size.height)
 
             ZStack {
-                GaugeFaceView(maxSpeed: maxSpeedInDisplayUnit)
+                GaugeFaceView(maxSpeed: maxSpeedInDisplayUnit, tilt: motionManager.tilt)
 
                 NeedleView()
                     .frame(width: side, height: side)
@@ -37,7 +38,10 @@ struct SpeedometerGaugeView: View {
                     .fill(
                         RadialGradient(
                             colors: [Color(white: 0.8), Color(white: 0.4), Color(white: 0.12)],
-                            center: UnitPoint(x: 0.35, y: 0.32),
+                            center: UnitPoint(
+                                x: 0.35 + motionManager.tilt.width * 0.28,
+                                y: 0.32 + motionManager.tilt.height * 0.28
+                            ),
                             startRadius: 0,
                             endRadius: side * 0.07
                         )
@@ -67,6 +71,7 @@ struct SpeedometerGaugeView: View {
         Color.black
         SpeedometerGaugeView(speed: 10, maxGaugeSpeedKMH: 60, measurementSystem: .metric)
             .padding(24)
+            .environmentObject(MotionManager())
     }
     .ignoresSafeArea()
 }
