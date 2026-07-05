@@ -11,6 +11,7 @@ struct StatRow: View {
                 Image(systemName: systemImage)
                     .foregroundStyle(.orange)
                     .frame(width: 20)
+                    .accessibilityHidden(true)
                 Text(label)
                     .foregroundStyle(.white)
             }
@@ -23,6 +24,7 @@ struct StatRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
     }
 }
 

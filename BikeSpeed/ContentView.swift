@@ -56,14 +56,13 @@ struct ContentView: View {
             VStack {
                 HStack {
                     Spacer()
-                    Button {
+                    Button("Settings", systemImage: "gearshape.fill") {
                         isShowingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.secondary)
-                            .padding(12)
                     }
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
+                    .padding(12)
                     .buttonStyle(.plain)
                 }
                 Spacer()

@@ -6,6 +6,8 @@ import SwiftUI
 struct GaugeFaceView: View {
     let maxSpeed: Double
 
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
     private let startAngle: Double = -135
     private let sweepAngle: Double = 270
     private let majorDivisions = 10
@@ -52,7 +54,8 @@ struct GaugeFaceView: View {
             let p = point(center: center, radius: arcRadius, angle: gaugeAngle(fraction: fraction))
             if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
         }
-        context.stroke(path, with: .color(.orange), style: StrokeStyle(lineWidth: radius * 0.05, lineCap: .round))
+        let lineWidth = differentiateWithoutColor ? radius * 0.08 : radius * 0.05
+        context.stroke(path, with: .color(.orange), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
     }
 
     private func drawTicksAndLabels(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
@@ -74,7 +77,9 @@ struct GaugeFaceView: View {
 
             let isDanger = fraction >= dangerStartFraction
             let color: Color = isDanger ? .orange : (isMajor ? .white : Color(white: 0.6))
-            context.stroke(tickPath, with: .color(color), lineWidth: isMajor ? radius * 0.02 : radius * 0.01)
+            let baseWidth = isMajor ? radius * 0.02 : radius * 0.01
+            let tickWidth = isDanger && differentiateWithoutColor ? baseWidth * 1.8 : baseWidth
+            context.stroke(tickPath, with: .color(color), lineWidth: tickWidth)
 
             if isMajor {
                 let value = majorStep * Double(i / minorPerMajor)

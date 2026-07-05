@@ -17,6 +17,9 @@ struct DigitalSpeedReadoutView: View {
                 .foregroundStyle(.secondary)
         }
         .foregroundStyle(.white)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Current speed")
+        .accessibilityValue(measurementSystem.formattedSpeed(metersPerSecond: speed))
     }
 }
 

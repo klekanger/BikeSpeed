@@ -22,6 +22,9 @@ struct DirectionIndicatorView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Direction of travel")
+        .accessibilityValue(direction.map { Text(verbatim: $0.abbreviation) } ?? Text("Unknown"))
     }
 }
 
