@@ -28,23 +28,16 @@ struct ContentView: View {
                 )
                 .frame(maxWidth: .infinity)
 
-                HStack {
-                    DigitalSpeedReadoutView(
-                        speed: locationManager.displaySpeed,
-                        measurementSystem: settingsStore.measurementSystem
-                    )
-                    Spacer()
-                    DirectionIndicatorView(course: locationManager.course)
-                }
-                .padding(.horizontal)
-
                 StatsPanel(
                     averageSpeed: tripManager.averageSpeed,
+                    maxSpeed: tripManager.maxSpeed,
                     distance: tripManager.accumulatedDistance,
                     altitude: locationManager.altitude,
                     coordinate: locationManager.coordinate,
+                    course: locationManager.course,
                     measurementSystem: settingsStore.measurementSystem
                 )
+                .frame(height: 260)
                 .padding(.horizontal)
 
                 Spacer()
@@ -55,7 +48,12 @@ struct ContentView: View {
 
             VStack {
                 HStack {
+                    GPSSignalIndicatorView(quality: locationManager.signalQuality)
+                        .font(.system(size: 20))
+                        .padding(12)
+
                     Spacer()
+
                     Button("Settings", systemImage: "gearshape.fill") {
                         isShowingSettings = true
                     }

@@ -55,11 +55,7 @@ struct GaugeFaceView: View {
         context.stroke(
             Path(ellipseIn: rect),
             with: .conicGradient(
-                Gradient(colors: [
-                    Color(white: 0.8), Color(white: 0.25), Color(white: 0.9),
-                    Color(white: 0.2), Color(white: 0.65), Color(white: 0.3),
-                    Color(white: 0.8),
-                ]),
+                .metallicBezel,
                 center: center,
                 angle: .radians(tilt.width * 1.1)
             ),

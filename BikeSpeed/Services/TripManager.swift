@@ -10,6 +10,7 @@ final class TripManager: ObservableObject {
     @Published private(set) var state: TripState = .idle
     @Published private(set) var accumulatedDistance: CLLocationDistance = 0 // meters
     @Published private(set) var elapsedActiveDuration: TimeInterval = 0
+    @Published private(set) var maxSpeed: CLLocationSpeed = 0 // m/s, top instantaneous speed seen while running
 
     private var accumulatedActiveDuration: TimeInterval = 0
     private var activeStart: Date?
@@ -65,6 +66,7 @@ final class TripManager: ObservableObject {
         accumulatedDistance = 0
         accumulatedActiveDuration = 0
         elapsedActiveDuration = 0
+        maxSpeed = 0
         activeStart = nil
         previousLocation = nil
         state = .idle
@@ -80,6 +82,13 @@ final class TripManager: ObservableObject {
             previousLocation = location
             return
         }
+
+        // Track top speed from the instantaneous GPS reading, ignoring the negative "unknown"
+        // sentinel and clamping obvious teleport spikes with the same ceiling used for distance.
+        if location.speed >= 0 {
+            maxSpeed = max(maxSpeed, min(location.speed, maxPlausibleSpeed))
+        }
+
         guard let previous = previousLocation else {
             previousLocation = location
             return

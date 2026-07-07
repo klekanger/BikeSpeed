@@ -50,15 +50,26 @@ struct SpeedometerGaugeView: View {
                     .shadow(color: .black.opacity(0.5), radius: side * 0.008, x: 0, y: side * 0.004)
                     .frame(width: side * 0.12, height: side * 0.12)
 
-                VStack(spacing: side * 0.01) {
+                VStack(spacing: side * 0.015) {
                     Text(measurementSystem.gaugeUnitLabel(locale: locale))
                         .font(.system(size: side * 0.05, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Image(systemName: "bicycle")
-                        .font(.system(size: side * 0.06))
-                        .foregroundStyle(.secondary)
+                        .padding(.bottom, 8)
+
+                    Text(speedInDisplayUnit, format: .number.precision(.fractionLength(0)))
+                        .font(.system(size: side * 0.08, weight: .bold, design: .rounded))
+                        .foregroundStyle(.orange)
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: speedInDisplayUnit))
+                        .animation(.default, value: speedInDisplayUnit)
+                        .frame(width: side * 0.22) // fixed width leaving room for 3 digits
+                        .padding(.vertical, side * 0.012)
+                        .background(Color(white: 0.18), in: RoundedRectangle(cornerRadius: side * 0.03))
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Current speed")
+                        .accessibilityValue(measurementSystem.formattedSpeed(metersPerSecond: speed, locale: locale))
                 }
-                .offset(y: side * 0.22)
+                .offset(y: side * 0.23)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }

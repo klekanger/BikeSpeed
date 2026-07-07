@@ -11,6 +11,7 @@ final class LocationManager: NSObject, ObservableObject {
     @Published private(set) var altitude: Double?
     @Published private(set) var coordinate: CLLocationCoordinate2D?
     @Published private(set) var hasFix: Bool = false
+    @Published private(set) var signalQuality: GPSSignalQuality = .poor
     @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
     /// Fixes that passed the accuracy filter, for TripManager to consume for distance accumulation.
@@ -18,6 +19,9 @@ final class LocationManager: NSObject, ObservableObject {
 
     private let manager = CLLocationManager()
     private let smoothingFactor = 0.35
+    /// Upper bound on horizontal accuracy for the green "good" band; up to `maxHorizontalAccuracy`
+    /// is the yellow "fair" band. Worse than that is red "poor" and the fix is rejected.
+    private let goodHorizontalAccuracy: CLLocationAccuracy = 10
     private let maxHorizontalAccuracy: CLLocationAccuracy = 30
     private let courseSpeedThreshold: CLLocationSpeed = 1.0 // m/s (~3.6 km/h) below which GPS course is noise
 
@@ -65,7 +69,15 @@ extension LocationManager: CLLocationManagerDelegate {
     }
 
     private func process(_ location: CLLocation) {
-        guard location.horizontalAccuracy >= 0, location.horizontalAccuracy <= maxHorizontalAccuracy else {
+        signalQuality = GPSSignalQuality(
+            horizontalAccuracy: location.horizontalAccuracy,
+            goodWithin: goodHorizontalAccuracy,
+            acceptableWithin: maxHorizontalAccuracy
+        )
+
+        // Poor signal: leave speed/course/altitude/position frozen at their last trusted values and
+        // don't emit the fix, so TripManager adds nothing to the recorded distance either.
+        guard signalQuality.isUsable else {
             hasFix = false
             return
         }
