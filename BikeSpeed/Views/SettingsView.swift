@@ -5,6 +5,10 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
 
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    }
+
     private var maxGaugeSpeedBinding: Binding<Double> {
         Binding(
             get: { settings.measurementSystem.maxGaugeSpeedValue(fromCanonicalKMH: settings.maxGaugeSpeedKMH) },
@@ -43,7 +47,7 @@ struct SettingsView: View {
                             Text("Max speed")
                             Spacer()
                             Text(settings.measurementSystem.formattedMaxGaugeSpeed(fromCanonicalKMH: settings.maxGaugeSpeedKMH, locale: locale))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.black)
                         }
                     }
                 }
@@ -55,7 +59,6 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
-
                 Section("Language") {
                     Picker("Language", selection: $settings.appLanguage) {
                         Text("System").tag(AppLanguage.system)
@@ -65,13 +68,29 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
             }
-            .navigationTitle(settings.appLanguage.localizedString(forKey: "Settings"))
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
+            .safeAreaInset(edge: .bottom) {
+               VStack(spacing: 4) {
+                   HStack(spacing: 4) {
+                       Text(verbatim: "BikeSpeed")
+                           .foregroundStyle(.primary)
+                       Text(verbatim: "v\(appVersion)")
+                           .foregroundStyle(.primary)
+                   }
+                   Text(verbatim: "Lekanger tekst og kode 2026")
+                   Text(verbatim: "MIT License")
+               }
+               .font(.footnote)
+               .foregroundStyle(.secondary)
+               .frame(maxWidth: .infinity)
+               .padding(.bottom, 24)
             }
-        }
+           .navigationTitle(settings.appLanguage.localizedString(forKey: "Settings"))
+           .toolbar {
+               ToolbarItem(placement: .confirmationAction) {
+                   Button("Done") { dismiss() }
+               }
+           }
+       }
     }
 }
 
