@@ -45,8 +45,8 @@ struct GPSSignalIndicatorView: View {
 
     private var symbolName: String {
         switch quality {
-        case .good, .fair: return "location.fill"
-        case .poor: return "location.slash.fill"
+        case .good, .fair: return "location.circle.fill"
+        case .poor: return "location.slash.circle.fill"
         }
     }
 
