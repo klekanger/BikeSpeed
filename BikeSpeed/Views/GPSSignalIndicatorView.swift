@@ -25,6 +25,8 @@ struct GPSSignalIndicatorView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .transition(.opacity)
+                    .opacity(isTracking && isPulsing ? 0.35 : 0.75)
+                    .animation(.easeInOut(duration: 0.3), value: quality)
             }
         }
         .onAppear { updatePulse() }
