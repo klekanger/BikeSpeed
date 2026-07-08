@@ -118,6 +118,23 @@
         }
       }
     },
+    "GPS signal" : {
+      "comment" : "VoiceOver label for the GPS signal-strength indicator.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS signal"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS-signal"
+          }
+        }
+      }
+    },
     "Gauge" : {
       "localizations" : {
         "en" : {
@@ -151,23 +168,6 @@
         }
       }
     },
-    "GPS signal" : {
-      "comment" : "VoiceOver label for the GPS signal-strength indicator.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GPS signal"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GPS-signal"
-          }
-        }
-      }
-    },
     "Imperial" : {
       "localizations" : {
         "en" : {
@@ -196,6 +196,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Språk"
+          }
+        }
+      }
+    },
+    "Logging" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logging"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logger"
           }
         }
       }

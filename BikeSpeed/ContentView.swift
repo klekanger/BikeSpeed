@@ -48,7 +48,7 @@ struct ContentView: View {
 
             VStack {
                 HStack {
-                    GPSSignalIndicatorView(quality: locationManager.signalQuality)
+                    GPSSignalIndicatorView(quality: locationManager.signalQuality, isTracking: tripManager.state == .running)
                         .font(.system(size: 20))
                         .padding(12)
 
