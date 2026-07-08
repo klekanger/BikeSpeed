@@ -11,8 +11,10 @@ struct ContentView: View {
     @EnvironmentObject private var locationManager: LocationManager
     @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var tripManager: TripManager
+    @EnvironmentObject private var tripLogStore: TripLogStore
 
     @State private var isShowingSettings = false
+    @State private var isShowingTripLog = false
 
     var body: some View {
         ZStack {
@@ -54,6 +56,15 @@ struct ContentView: View {
 
                     Spacer()
 
+                    Button("Trip Log", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90") {
+                        isShowingTripLog = true
+                    }
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
+                    .padding(12)
+                    .buttonStyle(.plain)
+
                     Button("Settings", systemImage: "gearshape.fill") {
                         isShowingSettings = true
                     }
@@ -75,6 +86,9 @@ struct ContentView: View {
         .sheet(isPresented: $isShowingSettings) {
             SettingsView(settings: settingsStore)
         }
+        .sheet(isPresented: $isShowingTripLog) {
+            TripLogListView(store: tripLogStore)
+        }
     }
 }
 
@@ -84,4 +98,5 @@ struct ContentView: View {
         .environmentObject(SettingsStore())
         .environmentObject(TripManager(locationManager: LocationManager()))
         .environmentObject(MotionManager())
+        .environmentObject(TripLogStore())
 }

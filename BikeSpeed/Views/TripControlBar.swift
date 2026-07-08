@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TripControlBar: View {
     @ObservedObject var tripManager: TripManager
+    @EnvironmentObject private var tripLogStore: TripLogStore
 
     var body: some View {
         if #available(iOS 26.0, *) {
@@ -13,6 +14,14 @@ struct TripControlBar: View {
                     }
                     .buttonStyle(.glassProminent)
                     .tint(.orange)
+
+                    Button(action: saveAction) {
+                        Label("Save", systemImage: "checkmark.circle.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glass)
+                    .tint(.green)
+                    .disabled(tripManager.state != .paused)
 
                     Button(role: .destructive, action: { tripManager.reset() }) {
                         Label("Reset", systemImage: "arrow.counterclockwise")
@@ -32,6 +41,14 @@ struct TripControlBar: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
+
+                Button(action: saveAction) {
+                    Label("Save", systemImage: "checkmark.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.green)
+                .disabled(tripManager.state != .paused)
 
                 Button(role: .destructive, action: { tripManager.reset() }) {
                     Label("Reset", systemImage: "arrow.counterclockwise")
@@ -67,12 +84,19 @@ struct TripControlBar: View {
         case .paused: tripManager.resume()
         }
     }
+
+    private func saveAction() {
+        guard let entry = tripManager.makeLogEntry() else { return }
+        tripLogStore.save(entry)
+        tripManager.reset()
+    }
 }
 
 #Preview {
     ZStack {
         Color.black
         TripControlBar(tripManager: TripManager(locationManager: LocationManager()))
+            .environmentObject(TripLogStore())
     }
     .ignoresSafeArea()
 }

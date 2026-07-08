@@ -18,6 +18,13 @@ final class TripManager: ObservableObject {
     private var cancellable: AnyCancellable?
     private var tickTimer: Timer?
 
+    /// Set once in `start()` and never touched by `resume()`, unlike `activeStart` — this is the
+    /// stable wall-clock start time saved into a `TripLogEntry`.
+    private var tripStartDate: Date?
+    private var altitudeSamples: [AltitudeSample] = []
+    private var lastAltitudeSampleDistance: CLLocationDistance = 0
+    private let altitudeSampleDistanceInterval: CLLocationDistance = 25 // meters
+
     /// Guards against GPS teleport artifacts corrupting the trip total.
     private let maxPlausibleSpeed: CLLocationSpeed = 120 / 3.6 // ~120 km/h in m/s
     private let jitterFloor: CLLocationDistance = 1.0
@@ -45,6 +52,7 @@ final class TripManager: ObservableObject {
         guard state == .idle else { return }
         state = .running
         activeStart = Date()
+        tripStartDate = Date()
     }
 
     func pause() {
@@ -69,7 +77,26 @@ final class TripManager: ObservableObject {
         maxSpeed = 0
         activeStart = nil
         previousLocation = nil
+        tripStartDate = nil
+        altitudeSamples.removeAll()
+        lastAltitudeSampleDistance = 0
         state = .idle
+    }
+
+    /// Snapshots the current trip into a saveable log entry. `nil` if there's no paused trip to
+    /// save, or if the trip is too short/short-lived to be meaningful.
+    func makeLogEntry() -> TripLogEntry? {
+        guard state == .paused, let tripStartDate else { return nil }
+        guard accumulatedActiveDuration >= 5, accumulatedDistance >= 10 else { return nil }
+        return TripLogEntry(
+            id: UUID(),
+            startDate: tripStartDate,
+            duration: accumulatedActiveDuration,
+            distance: accumulatedDistance,
+            averageSpeed: averageSpeed,
+            maxSpeed: maxSpeed,
+            altitudeProfile: altitudeSamples
+        )
     }
 
     private func currentElapsedActiveDuration() -> TimeInterval {
@@ -91,6 +118,9 @@ final class TripManager: ObservableObject {
 
         guard let previous = previousLocation else {
             previousLocation = location
+            if location.verticalAccuracy >= 0 {
+                altitudeSamples.append(AltitudeSample(distance: 0, altitude: location.altitude))
+            }
             return
         }
 
@@ -107,5 +137,11 @@ final class TripManager: ObservableObject {
             accumulatedDistance += delta
         }
         previousLocation = location
+
+        if location.verticalAccuracy >= 0,
+           accumulatedDistance - lastAltitudeSampleDistance >= altitudeSampleDistanceInterval {
+            altitudeSamples.append(AltitudeSample(distance: accumulatedDistance, altitude: location.altitude))
+            lastAltitudeSampleDistance = accumulatedDistance
+        }
     }
 }
