@@ -4,23 +4,45 @@ struct TripControlBar: View {
     @ObservedObject var tripManager: TripManager
 
     var body: some View {
-        HStack(spacing: 16) {
-            Button(action: primaryAction) {
-                Label(primaryLabel, systemImage: primaryIcon)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
+        if #available(iOS 26.0, *) {
+            GlassEffectContainer(spacing: 16) {
+                HStack(spacing: 16) {
+                    Button(action: primaryAction) {
+                        Label(primaryLabel, systemImage: primaryIcon)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(.orange)
 
-            Button(role: .destructive, action: { tripManager.reset() }) {
-                Label("Reset", systemImage: "arrow.counterclockwise")
-                    .frame(maxWidth: .infinity)
+                    Button(role: .destructive, action: { tripManager.reset() }) {
+                        Label("Reset", systemImage: "arrow.counterclockwise")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glass)
+                    .disabled(tripManager.state == .running)
+                }
+                .font(.system(size: 17, weight: .semibold))
+                .padding(.horizontal)
             }
-            .buttonStyle(.bordered)
-            .disabled(tripManager.state == .running)
+        } else {
+            HStack(spacing: 16) {
+                Button(action: primaryAction) {
+                    Label(primaryLabel, systemImage: primaryIcon)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+
+                Button(role: .destructive, action: { tripManager.reset() }) {
+                    Label("Reset", systemImage: "arrow.counterclockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(tripManager.state == .running)
+            }
+            .font(.system(size: 17, weight: .semibold))
+            .padding(.horizontal)
         }
-        .font(.system(size: 17, weight: .semibold))
-        .padding(.horizontal)
     }
 
     private var primaryLabel: LocalizedStringKey {
