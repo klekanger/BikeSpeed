@@ -4,7 +4,19 @@ struct TripControlBar: View {
     @ObservedObject var tripManager: TripManager
     @EnvironmentObject private var tripLogStore: TripLogStore
 
+    @State private var isShowingSavedConfirmation = false
+
     var body: some View {
+        Group {
+            content
+        }
+        .alert("Trip saved", isPresented: $isShowingSavedConfirmation) {
+            Button("OK") {}
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if #available(iOS 26.0, *) {
             GlassEffectContainer(spacing: 16) {
                 HStack(spacing: 16) {
@@ -21,7 +33,7 @@ struct TripControlBar: View {
                     }
                     .buttonStyle(.glass)
                     .tint(.green)
-                    .disabled(tripManager.state != .paused)
+                    .disabled(!tripManager.canSaveTrip)
 
                     Button(role: .destructive, action: { tripManager.reset() }) {
                         Label("Reset", systemImage: "arrow.counterclockwise")
@@ -48,7 +60,7 @@ struct TripControlBar: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(.green)
-                .disabled(tripManager.state != .paused)
+                .disabled(!tripManager.canSaveTrip)
 
                 Button(role: .destructive, action: { tripManager.reset() }) {
                     Label("Reset", systemImage: "arrow.counterclockwise")
@@ -89,6 +101,7 @@ struct TripControlBar: View {
         guard let entry = tripManager.makeLogEntry() else { return }
         tripLogStore.save(entry)
         tripManager.reset()
+        isShowingSavedConfirmation = true
     }
 }
 

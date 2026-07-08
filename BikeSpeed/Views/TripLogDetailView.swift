@@ -7,7 +7,11 @@ struct TripLogDetailView: View {
     let entry: TripLogEntry
 
     @EnvironmentObject private var settingsStore: SettingsStore
+    @EnvironmentObject private var tripLogStore: TripLogStore
     @Environment(\.locale) private var locale
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var isShowingDeleteConfirmation = false
 
     var body: some View {
         Form {
@@ -42,6 +46,28 @@ struct TripLogDetailView: View {
         }
         .navigationTitle(entry.startDate.formatted(date: .abbreviated, time: .omitted))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .destructiveAction) {
+                Button(role: .destructive) {
+                    isShowingDeleteConfirmation = true
+                } label: {
+                    Label("Delete Trip", systemImage: "trash")
+                }
+            }
+        }
+        .confirmationDialog(
+            "Delete this trip?",
+            isPresented: $isShowingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Trip", role: .destructive) {
+                tripLogStore.delete(id: entry.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This cannot be undone.")
+        }
     }
 }
 
@@ -59,5 +85,6 @@ struct TripLogDetailView: View {
             }
         ))
         .environmentObject(SettingsStore())
+        .environmentObject(TripLogStore())
     }
 }

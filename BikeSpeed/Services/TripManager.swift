@@ -35,6 +35,12 @@ final class TripManager: ObservableObject {
         return accumulatedDistance / duration
     }
 
+    /// Whether `makeLogEntry()` would currently succeed — used to gate the Save button so it's
+    /// only enabled when there's actually something meaningful to save.
+    var canSaveTrip: Bool {
+        state == .paused && accumulatedActiveDuration >= 5 && accumulatedDistance >= 10
+    }
+
     init(locationManager: LocationManager) {
         cancellable = locationManager.acceptedLocations.sink { [weak self] location in
             self?.consume(location)

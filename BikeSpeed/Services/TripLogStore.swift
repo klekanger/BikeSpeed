@@ -33,6 +33,11 @@ final class TripLogStore: ObservableObject {
         persist()
     }
 
+    func delete(id: UUID) {
+        entries.removeAll { $0.id == id }
+        persist()
+    }
+
     private func load() {
         guard let data = try? Data(contentsOf: fileURL) else { return }
         entries = (try? decoder.decode([TripLogEntry].self, from: data)) ?? []
