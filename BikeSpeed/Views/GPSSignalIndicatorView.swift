@@ -9,12 +9,15 @@ struct GPSSignalIndicatorView: View {
     let isTracking: Bool
 
     @State private var isPulsing = false
+    @State private var pulseTask: Task<Void, Never>?
+
+    private static let pulseStepDuration = 1.2
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: symbolName)
                 .foregroundStyle(color)
-                .opacity(isTracking && isPulsing ? 0.35 : 1)
+                .opacity(isTracking && isPulsing ? 0.35 : 0.75)
                 .animation(.easeInOut(duration: 0.3), value: quality)
 
             if isTracking {
@@ -31,14 +34,25 @@ struct GPSSignalIndicatorView: View {
         .accessibilityValue(accessibilityValue)
     }
 
+    // `.repeatForever` animations run on the rendered layer rather than being driven by
+    // `isPulsing`'s value, so simply setting `isPulsing = false` doesn't reliably cancel an
+    // in-flight repeat. Driving each half-cycle explicitly from a cancellable Task means
+    // stopping is just "don't schedule the next step" instead of racing a running animation.
     private func updatePulse() {
-        if isTracking {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                isPulsing = true
-            }
-        } else {
+        pulseTask?.cancel()
+        guard isTracking else {
             withAnimation(.easeInOut(duration: 0.3)) {
                 isPulsing = false
+            }
+            return
+        }
+
+        pulseTask = Task {
+            while !Task.isCancelled {
+                withAnimation(.easeInOut(duration: Self.pulseStepDuration)) {
+                    isPulsing.toggle()
+                }
+                try? await Task.sleep(for: .seconds(Self.pulseStepDuration))
             }
         }
     }
