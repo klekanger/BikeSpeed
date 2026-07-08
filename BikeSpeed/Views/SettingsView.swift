@@ -47,7 +47,6 @@ struct SettingsView: View {
                             Text("Max speed")
                             Spacer()
                             Text(settings.measurementSystem.formattedMaxGaugeSpeed(fromCanonicalKMH: settings.maxGaugeSpeedKMH, locale: locale))
-                                .foregroundStyle(.black)
                         }
                     }
                 }
