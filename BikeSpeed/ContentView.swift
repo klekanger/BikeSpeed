@@ -32,15 +32,19 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
 
                 StatsPanel(
-                    averageSpeed: tripManager.averageSpeed,
-                    maxSpeed: tripManager.maxSpeed,
-                    distance: tripManager.accumulatedDistance,
-                    duration: tripManager.elapsedActiveDuration,
-                    isAutoPaused: tripManager.isAutoPaused,
-                    altitude: locationManager.altitude,
-                    coordinate: locationManager.coordinate,
-                    course: locationManager.course,
-                    streetName: addressLookupManager.streetName,
+                    trip: TripStats(
+                        averageSpeed: tripManager.averageSpeed,
+                        maxSpeed: tripManager.maxSpeed,
+                        distance: tripManager.accumulatedDistance,
+                        duration: tripManager.elapsedActiveDuration,
+                        isAutoPaused: tripManager.isAutoPaused
+                    ),
+                    location: LocationReadout(
+                        altitude: locationManager.altitude,
+                        coordinate: locationManager.coordinate,
+                        course: locationManager.course,
+                        streetName: addressLookupManager.streetName
+                    ),
                     measurementSystem: settingsStore.measurementSystem,
                     appLanguage: settingsStore.appLanguage
                 )

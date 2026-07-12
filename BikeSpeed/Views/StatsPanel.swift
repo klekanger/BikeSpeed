@@ -1,21 +1,34 @@
 import SwiftUI
 import CoreLocation
 
+/// What the trip has accumulated so far. A value rather than five loose arguments: `distance` and
+/// `duration` are both `Double` underneath, so nothing but the argument label tells them apart, and
+/// the panel's parameter list only grows as stats are added.
+struct TripStats {
+    let averageSpeed: Double // m/s
+    let maxSpeed: Double // m/s
+    let distance: Double // meters
+    let duration: TimeInterval // seconds of active (moving) time; auto-paused time is excluded
+    let isAutoPaused: Bool
+}
+
+/// Where the rider is right now, independent of any trip. Each `nil` means that value hasn't
+/// resolved yet rather than that it's zero.
+struct LocationReadout {
+    let altitude: Double? // meters
+    let coordinate: CLLocationCoordinate2D?
+    let course: Double? // degrees
+    let streetName: String? // nil until reverse geocoding resolves one
+}
+
 /// The 2×2 stats grid shown under the gauge, wrapped in the same brushed-metal bezel as the
 /// speedometer. Cells, clockwise from top-left: average speed, direction of travel, distance,
 /// altitude. Tapping the average-speed cell swaps it for the trip's max speed; tapping the
 /// distance cell swaps it for the trip's duration; tapping the altitude cell swaps it for the GPS
 /// position.
 struct StatsPanel: View {
-    let averageSpeed: Double // m/s
-    let maxSpeed: Double // m/s
-    let distance: Double // meters
-    let duration: TimeInterval // seconds of active (moving) trip time
-    let isAutoPaused: Bool
-    let altitude: Double? // meters
-    let coordinate: CLLocationCoordinate2D?
-    let course: Double? // degrees, nil until a reliable course exists
-    let streetName: String? // nil until reverse geocoding resolves one
+    let trip: TripStats
+    let location: LocationReadout
     let measurementSystem: MeasurementSystem
     let appLanguage: AppLanguage
 
@@ -57,7 +70,7 @@ struct StatsPanel: View {
     private var speedCell: StatCell {
         StatCell(
             systemImage: showingMaxSpeed ? "gauge.with.dots.needle.100percent" : "speedometer",
-            value: measurementSystem.formattedSpeed(metersPerSecond: showingMaxSpeed ? maxSpeed : averageSpeed, locale: locale),
+            value: measurementSystem.formattedSpeed(metersPerSecond: showingMaxSpeed ? trip.maxSpeed : trip.averageSpeed, locale: locale),
             caption: showingMaxSpeed ? "Max speed" : "Average speed",
             onTap: { showingMaxSpeed.toggle() }
         )
@@ -68,11 +81,11 @@ struct StatsPanel: View {
     private var directionCell: StatCell {
         StatCell(
             systemImage: "location.north.fill",
-            value: course.map { CompassDirection(course: $0).abbreviation(language: appLanguage) } ?? "--",
+            value: location.course.map { CompassDirection(course: $0).abbreviation(language: appLanguage) } ?? "--",
             caption: "Direction of travel",
-            captionContent: .data(streetName),
-            iconRotation: .degrees(course ?? 0),
-            iconTint: course == nil ? .secondary : .orange
+            captionContent: .data(location.streetName),
+            iconRotation: .degrees(location.course ?? 0),
+            iconTint: location.course == nil ? .secondary : .orange
         )
     }
 
@@ -82,11 +95,11 @@ struct StatsPanel: View {
         StatCell(
             systemImage: showingDuration ? "stopwatch" : "point.topleft.down.curvedto.point.bottomright.up",
             value: showingDuration
-                ? TripDurationFormatting.formatted(seconds: duration, locale: locale)
-                : measurementSystem.formattedDistance(meters: distance, locale: locale),
+                ? TripDurationFormatting.formatted(seconds: trip.duration, locale: locale)
+                : measurementSystem.formattedDistance(meters: trip.distance, locale: locale),
             caption: showingDuration ? "Duration" : "Distance",
-            captionContent: isAutoPaused ? .text("Auto-paused") : .name,
-            iconTint: isAutoPaused ? .secondary : .orange,
+            captionContent: trip.isAutoPaused ? .text("Auto-paused") : .name,
+            iconTint: trip.isAutoPaused ? .secondary : .orange,
             onTap: { showingDuration.toggle() }
         )
     }
@@ -94,7 +107,7 @@ struct StatsPanel: View {
     private var altitudeCell: StatCell {
         StatCell(
             systemImage: showingPosition ? "location" : "mountain.2",
-            value: showingPosition ? formattedPosition : (altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"),
+            value: showingPosition ? formattedPosition : (location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"),
             caption: showingPosition ? "Position" : "Altitude",
             onTap: { showingPosition.toggle() }
         )
@@ -111,7 +124,7 @@ struct StatsPanel: View {
     /// Hemisphere letters share the compass abbreviations' catalog keys, so they follow the same
     /// east/west swap in Norwegian (Ø/V) that the direction cell does.
     private var formattedPosition: String {
-        guard let coordinate else { return "--" }
+        guard let coordinate = location.coordinate else { return "--" }
         let latHemisphere = appLanguage.localizedString(forKey: coordinate.latitude >= 0 ? "N" : "S")
         let lonHemisphere = appLanguage.localizedString(forKey: coordinate.longitude >= 0 ? "E" : "W")
         let lat = String(format: "%.5f°", abs(coordinate.latitude))
@@ -124,15 +137,19 @@ struct StatsPanel: View {
     ZStack {
         Color.black
         StatsPanel(
-            averageSpeed: 6.86,
-            maxSpeed: 11.4,
-            distance: 28_560,
-            duration: 4_324,
-            isAutoPaused: false,
-            altitude: 145,
-            coordinate: CLLocationCoordinate2D(latitude: 59.913868, longitude: 10.752245),
-            course: 45,
-            streetName: "Karl Johans gate",
+            trip: TripStats(
+                averageSpeed: 6.86,
+                maxSpeed: 11.4,
+                distance: 28_560,
+                duration: 4_324,
+                isAutoPaused: false
+            ),
+            location: LocationReadout(
+                altitude: 145,
+                coordinate: CLLocationCoordinate2D(latitude: 59.913868, longitude: 10.752245),
+                course: 45,
+                streetName: "Karl Johans gate"
+            ),
             measurementSystem: .metric,
             appLanguage: .system
         )
