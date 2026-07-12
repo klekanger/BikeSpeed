@@ -649,6 +649,23 @@
         }
       }
     },
+    "Shows %@" : {
+      "comment" : "VoiceOver hint on a stats cell: names the readout a tap would switch to.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viser %@"
+          }
+        }
+      }
+    },
     "Start" : {
       "localizations" : {
         "en" : {

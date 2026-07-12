@@ -23,9 +23,8 @@ struct LocationReadout {
 
 /// The 2×2 stats grid shown under the gauge, wrapped in the same brushed-metal bezel as the
 /// speedometer. Cells, clockwise from top-left: average speed, direction of travel, distance,
-/// altitude. Tapping the average-speed cell swaps it for the trip's max speed; tapping the
-/// distance cell swaps it for the trip's duration; tapping the altitude cell swaps it for the GPS
-/// position.
+/// altitude. All but the direction cell hold a second readout — max speed, duration, GPS position —
+/// that a tap or a horizontal swipe pages to, and their page indicators are what say so.
 struct StatsPanel: View {
     let trip: TripStats
     let location: LocationReadout
@@ -35,9 +34,13 @@ struct StatsPanel: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var motionManager: MotionManager
 
-    @State private var showingMaxSpeed = false
-    @State private var showingDuration = false
-    @State private var showingPosition = false
+    @State private var speedPage = 0
+    @State private var distancePage = 0
+    @State private var altitudePage = 0
+
+    private var showingMaxSpeed: Bool { speedPage == 1 }
+    private var showingDuration: Bool { distancePage == 1 }
+    private var showingPosition: Bool { altitudePage == 1 }
 
     private let cornerRadius: CGFloat = 24
     private let bezelWidth: CGFloat = 5
@@ -71,8 +74,7 @@ struct StatsPanel: View {
         StatCell(
             systemImage: showingMaxSpeed ? "gauge.with.dots.needle.100percent" : "speedometer",
             value: measurementSystem.formattedSpeed(metersPerSecond: showingMaxSpeed ? trip.maxSpeed : trip.averageSpeed, locale: locale),
-            caption: showingMaxSpeed ? "Max speed" : "Average speed",
-            onTap: { showingMaxSpeed.toggle() }
+            paging: .init(page: $speedPage, names: ["Average speed", "Max speed"])
         )
     }
 
@@ -97,10 +99,10 @@ struct StatsPanel: View {
             value: showingDuration
                 ? TripDurationFormatting.formatted(seconds: trip.duration, locale: locale)
                 : measurementSystem.formattedDistance(meters: trip.distance, locale: locale),
-            caption: showingDuration ? "Duration" : "Distance",
             captionContent: trip.isAutoPaused ? .text("Auto-paused") : .name,
             iconTint: trip.isAutoPaused ? .secondary : .orange,
-            onTap: { showingDuration.toggle() }
+            paging: .init(page: $distancePage, names: ["Distance", "Duration"]),
+            pageIndicatorInset: bottomRowIndicatorInset
         )
     }
 
@@ -108,9 +110,16 @@ struct StatsPanel: View {
         StatCell(
             systemImage: showingPosition ? "location" : "mountain.2",
             value: showingPosition ? formattedPosition : (location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"),
-            caption: showingPosition ? "Position" : "Altitude",
-            onTap: { showingPosition.toggle() }
+            paging: .init(page: $altitudePage, names: ["Altitude", "Position"]),
+            pageIndicatorInset: bottomRowIndicatorInset
         )
+    }
+
+    /// The bezel is stroked over the panel's outer edge, so it eats into the bottom row's cells in a
+    /// way the hairline divider above them doesn't. Without this the bottom dots would read as
+    /// crowded against the bezel while the top row's sat comfortably above the divider.
+    private var bottomRowIndicatorInset: CGFloat {
+        StatCell.defaultPageIndicatorInset + bezelWidth
     }
 
     private var verticalDivider: some View {
