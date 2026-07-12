@@ -31,20 +31,11 @@ final class AddressLookupManager: ObservableObject {
     private var isLookupInProgress = false
     private var consecutiveFailures = 0
 
-    private let minimumDistanceMeters: CLLocationDistance
-    private let minimumLookupInterval: TimeInterval
-    private let maximumLookupInterval: TimeInterval
+    private let minimumDistanceMeters: CLLocationDistance = 75
+    private let minimumLookupInterval: TimeInterval = 10
+    private let maximumLookupInterval: TimeInterval = 120
 
-    init(
-        locationManager: LocationManager,
-        minimumDistanceMeters: CLLocationDistance = 75,
-        minimumLookupInterval: TimeInterval = 10,
-        maximumLookupInterval: TimeInterval = 120
-    ) {
-        self.minimumDistanceMeters = minimumDistanceMeters
-        self.minimumLookupInterval = minimumLookupInterval
-        self.maximumLookupInterval = maximumLookupInterval
-
+    init(locationManager: LocationManager) {
         cancellable = locationManager.acceptedLocations.sink { [weak self] location in
             self?.consume(location)
         }
@@ -53,9 +44,7 @@ final class AddressLookupManager: ObservableObject {
     /// How long to wait before the next attempt: the base interval while things are healthy,
     /// doubling per consecutive failure (10 s → 20 s → 40 s …) up to `maximumLookupInterval`.
     private var currentLookupInterval: TimeInterval {
-        guard consecutiveFailures > 0 else { return minimumLookupInterval }
-        let backoff = minimumLookupInterval * pow(2, Double(consecutiveFailures))
-        return min(backoff, maximumLookupInterval)
+        min(minimumLookupInterval * pow(2, Double(consecutiveFailures)), maximumLookupInterval)
     }
 
     private func consume(_ location: CLLocation) {
@@ -71,29 +60,32 @@ final class AddressLookupManager: ObservableObject {
         isLookupInProgress = true
         lastLookupAttempt = Date()
 
-        Task { [weak self] in
-            guard let self else { return }
-            defer { self.isLookupInProgress = false }
+        Task { [self] in
+            defer { isLookupInProgress = false }
 
             do {
-                self.resolve(try await self.reverseGeocode(location), at: location)
+                resolve(try await reverseGeocode(location), at: location)
             } catch let error as CLError where error.code == .geocodeFoundNoResult {
                 // Not a failure — there genuinely is no street here (a trail, or out at sea). It's a
                 // resolved "nothing", so blank the caption and let the gates advance as usual.
-                self.resolve(nil, at: location)
+                resolve(nil, at: location)
             } catch {
                 // Network down, or the geocoder is throttling us. Keep showing the last street we
                 // did resolve, and leave `lastLookupLocation` where it was so the next fix retries —
                 // but back off first, so a throttle doesn't turn into us hammering every 10 s.
-                self.consecutiveFailures += 1
+                consecutiveFailures += 1
             }
         }
     }
 
     private func resolve(_ street: String?, at location: CLLocation) {
         lastLookupLocation = location
-        streetName = street
         consecutiveFailures = 0
+        // Riding one street spans many lookup windows, so most resolutions repeat the last answer.
+        // Only publish real changes — every write invalidates the whole ContentView tree.
+        if streetName != street {
+            streetName = street
+        }
     }
 
     private func reverseGeocode(_ location: CLLocation) async throws -> String? {
@@ -131,13 +123,8 @@ final class AddressLookupManager: ObservableObject {
     ///
     /// The house number sits on whichever side the locale puts it — leading in the US
     /// ("1-99 Stockton St"), trailing in Norway ("Storgata 12") — so both ends are trimmed.
-    static func streetComponent(of shortAddress: String) -> String? {
-        let street = shortAddress
-            .split(separator: ",", maxSplits: 1)
-            .first
-            .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
-
-        var parts = street.split(separator: " ")
+    private static func streetComponent(of shortAddress: String) -> String? {
+        var parts = shortAddress.prefix { $0 != "," }.split(separator: " ")
         if parts.count > 1, isHouseNumber(parts[0]) {
             parts.removeFirst()
         }

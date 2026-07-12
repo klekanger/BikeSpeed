@@ -58,14 +58,14 @@ struct StatsPanel: View {
         )
     }
 
-    /// The street name takes over the caption slot; until one resolves the slot is left blank
-    /// (hence `?? ""`, not a fallback label) — the arrow and compass letter carry the cell alone.
+    /// The street name takes over the caption line; until one resolves the line stays blank rather
+    /// than falling back to a label — the arrow and compass letter carry the cell alone.
     private var directionCell: StatCell {
         StatCell(
             systemImage: "location.north.fill",
             value: course.map { CompassDirection(course: $0).abbreviation } ?? "--",
             caption: "Direction of travel",
-            captionOverride: streetName ?? "",
+            captionContent: .data(streetName),
             iconRotation: .degrees(course ?? 0),
             iconTint: course == nil ? .secondary : .orange
         )

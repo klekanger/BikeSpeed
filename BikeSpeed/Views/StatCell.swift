@@ -4,14 +4,22 @@ import SwiftUI
 /// matching the "icon, then data" layout of the old stat rows. Cells can optionally be tapped to
 /// toggle between two readouts (e.g. average↔max speed, altitude↔GPS position).
 struct StatCell: View {
+    /// What the caption line under the value displays.
+    enum Caption {
+        /// The stat's own name — "Distance", "Altitude". The default for most cells.
+        case name
+        /// Live data in place of the name, as the direction cell shows the street being ridden.
+        /// Nil renders a blank line rather than no line, so the cell stays vertically aligned with
+        /// its neighbours in the grid until the data resolves.
+        case data(String?)
+    }
+
     let systemImage: String
     let value: String
+    /// The stat's name: always the VoiceOver label, and the caption line's content unless
+    /// `captionContent` replaces it.
     let caption: LocalizedStringKey
-    /// Shown in place of `caption` when non-nil — for dynamic data that must not be run through the
-    /// string catalog, like the reverse-geocoded street name in the direction cell. `caption` still
-    /// supplies the VoiceOver label. An empty override renders a blank line rather than collapsing,
-    /// so the cell's icon and value stay aligned with its neighbours in the grid.
-    var captionOverride: String?
+    var captionContent: Caption = .name
     /// Rotation applied to the icon — used by the direction cell to point the arrow at the GPS
     /// course; `.zero` (the default) leaves ordinary stat icons upright.
     var iconRotation: Angle = .zero
@@ -55,16 +63,20 @@ struct StatCell: View {
     }
 
     private var captionText: Text {
-        guard let captionOverride else { return Text(caption) }
-        // A space, not "", so the line still occupies its height and the cell doesn't reflow.
-        return Text(captionOverride.isEmpty ? " " : captionOverride)
+        switch captionContent {
+        case .name:
+            return Text(caption)
+        case .data(let text):
+            // A space, not "", so an unresolved line still occupies its height and nothing reflows.
+            return Text(verbatim: text ?? " ")
+        }
     }
 
-    /// VoiceOver reads the label ("Direction of travel") plus this. A resolved override is data
-    /// worth announcing, so it joins the value: "N, Storgata".
+    /// VoiceOver reads the label ("Direction of travel") plus this. Resolved data is worth
+    /// announcing, so it joins the value: "N, Storgata".
     private var accessibilityValue: String {
-        guard let captionOverride, !captionOverride.isEmpty else { return value }
-        return "\(value), \(captionOverride)"
+        guard case .data(let text?) = captionContent else { return value }
+        return "\(value), \(text)"
     }
 }
 
