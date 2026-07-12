@@ -84,7 +84,7 @@ final class TripManager: ObservableObject {
         // re-reading `settings.autoPauseEnabled` here would still see the old one.
         settingsCancellable = settings.$autoPauseEnabled.sink { [weak self] enabled in
             self?.autoPauseEnabled = enabled
-            if !enabled { self?.endAutoPause() }
+            if !enabled { self?.clearAutoPause() }
         }
         cancellable = locationManager.acceptedLocations.sink { [weak self] location in
             self?.consume(location)
@@ -108,11 +108,11 @@ final class TripManager: ObservableObject {
 
     func pause() {
         guard state == .running else { return }
-        suspendClock()
-        // A manual pause supersedes an auto-pause, so releasing it is the user's call alone.
-        isAutoPaused = false
-        belowThresholdSince = nil
+        // Before `clearAutoPause()`, so it sees `.paused` and doesn't restart the clock: a manual
+        // pause supersedes an auto-pause, and releasing it is now the user's call alone.
         state = .paused
+        suspendClock()
+        clearAutoPause()
     }
 
     func resume() {
@@ -131,8 +131,7 @@ final class TripManager: ObservableObject {
         previousLocation = nil
         teleportRejections = 0
         tripStartDate = nil
-        isAutoPaused = false
-        belowThresholdSince = nil
+        clearAutoPause() // safe here: `state` is never `.running`, so this can't start the clock
         lastAcceptedFix = nil
         altitudeSamples.removeAll()
         lastAltitudeSampleDistance = 0
@@ -178,10 +177,16 @@ final class TripManager: ObservableObject {
         suspendClock()
     }
 
-    private func endAutoPause() {
+    /// The one place auto-pause is unwound. Auto-pause is two pieces of state — the `isAutoPaused`
+    /// flag and the `belowThresholdSince` debounce that arms it — and every exit clears both here:
+    /// a manual pause, a reset, the setting going off, a fix at resume speed, the fix-loss watchdog,
+    /// and simply moving again. Owning both together is the point: they were previously cleared in
+    /// five places that didn't all clear both, and the debounce only stayed consistent because the
+    /// disabled-guard happened to re-clear it on every fix.
+    private func clearAutoPause() {
+        belowThresholdSince = nil
         guard isAutoPaused else { return }
         isAutoPaused = false
-        belowThresholdSince = nil
         // Guarded, so clearing an auto-pause can never restart the clock on a manually paused trip.
         if state == .running { startClock() }
     }
@@ -198,7 +203,7 @@ final class TripManager: ObservableObject {
     private func releaseAutoPauseIfUnconfirmed() {
         guard isAutoPaused, let lastAcceptedFix else { return }
         guard Date().timeIntervalSince(lastAcceptedFix) >= autoPauseFixTimeout else { return }
-        endAutoPause()
+        clearAutoPause()
     }
 
     /// Decides whether a running trip should stop accumulating. Runs on the GPS clock
@@ -208,8 +213,7 @@ final class TripManager: ObservableObject {
     /// `autoPauseDelay` on its own and pause a moving rider instantly, debounce and all.
     private func updateAutoPause(for location: CLLocation) {
         guard autoPauseEnabled else {
-            endAutoPause()
-            belowThresholdSince = nil
+            clearAutoPause()
             return
         }
         // A negative speed is CoreLocation's "unknown" sentinel, not a slow one — hold the current
@@ -217,12 +221,12 @@ final class TripManager: ObservableObject {
         guard location.speed >= 0 else { return }
 
         if isAutoPaused {
-            if location.speed >= autoResumeSpeed { endAutoPause() }
+            if location.speed >= autoResumeSpeed { clearAutoPause() }
             return
         }
 
         guard location.speed < autoPauseSpeed else {
-            belowThresholdSince = nil
+            clearAutoPause() // moving: disarm the debounce
             return
         }
         let since = belowThresholdSince ?? location.timestamp
