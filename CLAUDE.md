@@ -42,6 +42,7 @@ Model layer speaks pure SI units (meters, m/s, degrees, seconds) throughout; onl
 - Targets iOS only (`SDKROOT = iphoneos`, `IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `TARGETED_DEVICE_FAMILY = 1`). It was originally generated as a macOS app template and was retargeted by hand-editing `project.pbxproj` (no Xcode GUI in this environment) — if something looks like a leftover macOS setting, it's likely just not cleaned up yet.
 - `GENERATE_INFOPLIST_FILE = YES` — there is no physical `Info.plist`; usage-description and other Info.plist keys live as `INFOPLIST_KEY_*` build settings in `project.pbxproj`, plus `InfoPlist.xcstrings` for the localized location usage description.
 - Uses a `PBXFileSystemSynchronizedRootGroup` — new files dropped into `BikeSpeed/` are picked up automatically, no manual pbxproj edits needed for new Swift files (this applies to `.xcstrings` files too).
-- `Localizable.xcstrings` holds all UI-facing strings (en + nb); compass abbreviations (N/NE/etc.) are intentionally not localized (identical in Norwegian).
+- `Localizable.xcstrings` holds all UI-facing strings (en + nb), keyed by the English source string. Compass abbreviations are localized too (Norwegian swaps the east/west axis: Ø/V for E/W), keyed as "N"/"NE"/… — note these single-letter keys mean a bare `Text("N")` anywhere would now get translated.
+- Strings that are resolved to a `String` in code (rather than handed to SwiftUI as a `LocalizedStringKey`) must go through `AppLanguage.localizedString(forKey:)`, not `String(localized:)` — the latter ignores the in-app Language override and follows the device language instead. See `AppLanguage` for why.
 
 Bundle identifier: `lekanger.BikeSpeed`. Swift 5.0, `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.

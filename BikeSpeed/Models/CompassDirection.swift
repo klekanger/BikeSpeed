@@ -11,7 +11,16 @@ enum CompassDirection: Int, CaseIterable {
         self = CompassDirection(rawValue: index) ?? .n
     }
 
-    var abbreviation: String {
+    /// Norwegian differs on the east/west axis: Ø (øst) and V (vest) replace E and W.
+    ///
+    /// Resolved through `AppLanguage` rather than `String(localized:)` so the in-app language
+    /// override is honored — see `AppLanguage.localizedString(forKey:)` for why that's necessary.
+    func abbreviation(language: AppLanguage) -> String {
+        language.localizedString(forKey: englishAbbreviation)
+    }
+
+    /// Doubles as the `Localizable.xcstrings` key, matching the catalog's source-string-as-key convention.
+    private var englishAbbreviation: String {
         switch self {
         case .n: return "N"
         case .ne: return "NE"

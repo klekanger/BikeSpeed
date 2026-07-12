@@ -39,7 +39,8 @@ struct ContentView: View {
                     coordinate: locationManager.coordinate,
                     course: locationManager.course,
                     streetName: addressLookupManager.streetName,
-                    measurementSystem: settingsStore.measurementSystem
+                    measurementSystem: settingsStore.measurementSystem,
+                    appLanguage: settingsStore.appLanguage
                 )
                 .frame(height: 260)
                 .padding(.horizontal)
