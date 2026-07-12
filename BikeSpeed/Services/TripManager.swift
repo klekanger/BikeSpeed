@@ -192,7 +192,9 @@ final class TripManager: ObservableObject {
 
     /// Decides whether a running trip should stop accumulating. Runs on the GPS clock
     /// (`location.timestamp`) rather than wall time, to stay consistent with the `dt` used for
-    /// distance below.
+    /// distance below. That is only safe because `LocationManager` rejects fixes older than its
+    /// `maxFixAge`: a cached fix carrying a timestamp minutes in the past would otherwise satisfy
+    /// `autoPauseDelay` on its own and pause a moving rider instantly, debounce and all.
     private func updateAutoPause(for location: CLLocation) {
         guard autoPauseEnabled else {
             endAutoPause()
