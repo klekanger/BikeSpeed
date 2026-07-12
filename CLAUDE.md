@@ -23,7 +23,16 @@ xcrun simctl boot "iPhone 17"   # if not already booted
 xcrun simctl install booted <path-to>/BikeSpeed.app
 xcrun simctl launch booted lekanger.BikeSpeed
 ```
-Location permission can be pre-granted for testing with `xcrun simctl privacy booted grant location lekanger.BikeSpeed`, though this simulator/iOS version has been observed to still show the system prompt on each fresh launch regardless — not an app bug, just re-verify on a real device if in doubt. Use Xcode's Debug ▸ Simulate Location, or `xcrun simctl location booted start --gpx <file>`, to exercise speed/course/altitude changes without a real ride.
+Location permission can be pre-granted for testing with `xcrun simctl privacy booted grant location lekanger.BikeSpeed`, though this simulator/iOS version has been observed to still show the system prompt on each fresh launch regardless — not an app bug, just re-verify on a real device if in doubt.
+
+To exercise speed/course/altitude without a real ride, use Xcode's Debug ▸ Simulate Location, or simulate a route from the command line:
+```
+xcrun simctl location booted start --speed=8 --interval=1 59.9139,10.7522 59.9184,10.7522
+```
+`--speed` is **m/s**, not km/h (8 m/s ≈ 29 km/h). Three things to know, each of which will otherwise look like an app bug:
+- The process must outlive the shell that launched it, or fixes silently stop arriving and the app appears frozen (needle stuck, distance stuck at 0).
+- `simctl location booted set <lat,lon>` is not a substitute for a route: a static point reports `CLLocation.speed` as the negative "unknown" sentinel, which `TripManager` deliberately ignores. To simulate a **standstill** (e.g. to trigger auto-pause) run a slow route instead — `--speed=0.2` between two points a few metres apart — which produces real near-zero speeds.
+- Don't jump the position between routes while a trip is running. A multi-kilometre teleport is exactly what `TripManager`'s teleport guard is built to reject, so distance will legitimately refuse to count it. Start the route before tapping Start, and keep successive routes adjacent.
 
 ## Architecture
 
