@@ -55,10 +55,9 @@ struct TripLogDetailView: View {
                 }
             }
         }
-        .confirmationDialog(
+        .alert(
             "Delete this trip?",
-            isPresented: $isShowingDeleteConfirmation,
-            titleVisibility: .visible
+            isPresented: $isShowingDeleteConfirmation
         ) {
             Button("Delete Trip", role: .destructive) {
                 tripLogStore.delete(id: entry.id)

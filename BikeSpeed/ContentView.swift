@@ -32,13 +32,19 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
 
                 StatsPanel(
-                    averageSpeed: tripManager.averageSpeed,
-                    maxSpeed: tripManager.maxSpeed,
-                    distance: tripManager.accumulatedDistance,
-                    altitude: locationManager.altitude,
-                    coordinate: locationManager.coordinate,
-                    course: locationManager.course,
-                    streetName: addressLookupManager.streetName,
+                    trip: TripStats(
+                        averageSpeed: tripManager.averageSpeed,
+                        maxSpeed: tripManager.maxSpeed,
+                        distance: tripManager.accumulatedDistance,
+                        duration: tripManager.elapsedActiveDuration,
+                        isAutoPaused: tripManager.isAutoPaused
+                    ),
+                    location: LocationReadout(
+                        altitude: locationManager.altitude,
+                        coordinate: locationManager.coordinate,
+                        course: locationManager.course,
+                        streetName: addressLookupManager.streetName
+                    ),
                     measurementSystem: settingsStore.measurementSystem,
                     appLanguage: settingsStore.appLanguage
                 )
@@ -53,7 +59,10 @@ struct ContentView: View {
 
             VStack {
                 HStack {
-                    GPSSignalIndicatorView(quality: locationManager.signalQuality, isTracking: tripManager.state == .running)
+                    GPSSignalIndicatorView(
+                        quality: locationManager.signalQuality,
+                        isTracking: tripManager.state == .running && !tripManager.isAutoPaused
+                    )
                         .font(.system(size: 20))
                         .padding(12)
 
@@ -97,12 +106,13 @@ struct ContentView: View {
 
 #Preview {
     let locationManager = LocationManager()
+    let settingsStore = SettingsStore()
 
     ContentView()
         .environmentObject(locationManager)
         .environmentObject(AddressLookupManager(locationManager: locationManager))
-        .environmentObject(SettingsStore())
-        .environmentObject(TripManager(locationManager: locationManager))
+        .environmentObject(settingsStore)
+        .environmentObject(TripManager(locationManager: locationManager, settings: settingsStore))
         .environmentObject(MotionManager())
         .environmentObject(TripLogStore())
 }

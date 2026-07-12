@@ -37,6 +37,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Toggle("Auto-pause", isOn: $settings.autoPauseEnabled)
+                } header: {
+                    Text("Trip")
+                } footer: {
+                    Text("Pauses distance and time automatically when you stop.")
+                }
+
                 Section("Gauge") {
                     Stepper(
                         value: maxGaugeSpeedBinding,

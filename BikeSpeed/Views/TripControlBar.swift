@@ -74,7 +74,13 @@ struct TripControlBar: View {
         }
     }
 
+    /// An auto-paused trip has already stopped accumulating, so offering to "Pause" it reads as a
+    /// no-op next to a stats panel that says "Auto-paused". The button's action is unchanged — it
+    /// still calls `pause()` — but what that *does* here is take the pause off the app and hand it
+    /// to the rider, which is the end-of-ride gesture: Save unlocks the moment the pause is manual.
+    /// A Garmin labels the same button in the same state "Stop", for the same reason.
     private var primaryLabel: LocalizedStringKey {
+        if tripManager.isAutoPaused { return "Stop" }
         switch tripManager.state {
         case .idle: return "Start"
         case .running: return "Pause"
@@ -83,6 +89,7 @@ struct TripControlBar: View {
     }
 
     private var primaryIcon: String {
+        if tripManager.isAutoPaused { return "stop.fill" }
         switch tripManager.state {
         case .idle, .paused: return "play.fill"
         case .running: return "pause.fill"
@@ -108,7 +115,7 @@ struct TripControlBar: View {
 #Preview {
     ZStack {
         Color.black
-        TripControlBar(tripManager: TripManager(locationManager: LocationManager()))
+        TripControlBar(tripManager: TripManager(locationManager: LocationManager(), settings: SettingsStore()))
             .environmentObject(TripLogStore())
     }
     .ignoresSafeArea()

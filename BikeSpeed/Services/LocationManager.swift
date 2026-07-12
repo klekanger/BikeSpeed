@@ -24,6 +24,12 @@ final class LocationManager: NSObject, ObservableObject {
     private let goodHorizontalAccuracy: CLLocationAccuracy = 10
     private let maxHorizontalAccuracy: CLLocationAccuracy = 30
     private let courseSpeedThreshold: CLLocationSpeed = 1.0 // m/s (~3.6 km/h) below which GPS course is noise
+    /// How old a fix may be and still be treated as current. Age has to be filtered separately from
+    /// accuracy: `startUpdatingLocation()` replays the last cached fix immediately, and that fix can
+    /// be minutes old while still carrying excellent `horizontalAccuracy`, so the accuracy filter
+    /// below waves it straight through. Everything downstream reads `timestamp` as "now" — see
+    /// `TripManager`, which measures both its auto-pause debounce and its `dt` against it.
+    private let maxFixAge: TimeInterval = 5
 
     override init() {
         super.init()
@@ -69,6 +75,12 @@ extension LocationManager: CLLocationManagerDelegate {
     }
 
     private func process(_ location: CLLocation) {
+        // A cached fix reports where the phone *was*, so drop it before it can pose as a current
+        // reading. Deliberately ahead of everything else and without touching `hasFix`: a stale fix
+        // is not a signal-quality problem, and letting it drive the indicator would flash the state
+        // of a fix we're about to ignore anyway.
+        guard Date().timeIntervalSince(location.timestamp) <= maxFixAge else { return }
+
         signalQuality = GPSSignalQuality(
             horizontalAccuracy: location.horizontalAccuracy,
             goodWithin: goodHorizontalAccuracy,

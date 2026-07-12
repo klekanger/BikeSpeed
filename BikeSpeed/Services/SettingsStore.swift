@@ -9,6 +9,7 @@ final class SettingsStore: ObservableObject {
         static let maxGaugeSpeedKMH = "maxGaugeSpeedKMH"
         static let measurementSystem = "measurementSystem"
         static let appLanguage = "appLanguage"
+        static let autoPauseEnabled = "autoPauseEnabled"
     }
 
     @Published var maxGaugeSpeedKMH: Double {
@@ -23,6 +24,10 @@ final class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
     }
 
+    @Published var autoPauseEnabled: Bool {
+        didSet { UserDefaults.standard.set(autoPauseEnabled, forKey: Keys.autoPauseEnabled) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         maxGaugeSpeedKMH = (defaults.object(forKey: Keys.maxGaugeSpeedKMH) as? Double) ?? 60
@@ -30,5 +35,8 @@ final class SettingsStore: ObservableObject {
             .flatMap(MeasurementSystem.init(rawValue:)) ?? .metric
         appLanguage = defaults.string(forKey: Keys.appLanguage)
             .flatMap(AppLanguage.init(rawValue:)) ?? .system
+        // `object(forKey:)`, not `bool(forKey:)`: the latter reports an unset key as `false`, which
+        // is indistinguishable from a deliberate off and would quietly defeat the default-on.
+        autoPauseEnabled = (defaults.object(forKey: Keys.autoPauseEnabled) as? Bool) ?? true
     }
 }

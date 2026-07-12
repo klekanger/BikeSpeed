@@ -17,6 +17,38 @@
         }
       }
     },
+    "Auto-pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-pause"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autopause"
+          }
+        }
+      }
+    },
+    "Auto-paused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-paused"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autopauset"
+          }
+        }
+      }
+    },
     "Average speed" : {
       "localizations" : {
         "en" : {
@@ -468,6 +500,22 @@
         }
       }
     },
+    "Pauses distance and time automatically when you stop." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pauses distance and time automatically when you stop."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pauser distanse og tid automatisk når du står stille."
+          }
+        }
+      }
+    },
     "Poor" : {
       "comment" : "VoiceOver value for a weak GPS signal.",
       "localizations" : {
@@ -601,6 +649,23 @@
         }
       }
     },
+    "Shows %@" : {
+      "comment" : "VoiceOver hint on a stats cell: names the readout a tap would switch to.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viser %@"
+          }
+        }
+      }
+    },
     "Start" : {
       "localizations" : {
         "en" : {
@@ -613,6 +678,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopp"
           }
         }
       }
@@ -665,6 +746,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dette kan ikke angres."
+          }
+        }
+      }
+    },
+    "Trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tur"
           }
         }
       }
