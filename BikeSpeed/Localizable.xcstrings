@@ -181,6 +181,24 @@
         }
       }
     },
+    "E" : {
+      "comment" : "Cardinal direction: east. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ø"
+          }
+        }
+      }
+    },
     "Fair" : {
       "comment" : "VoiceOver value for a marginal GPS signal.",
       "localizations" : {
@@ -344,6 +362,42 @@
         }
       }
     },
+    "N" : {
+      "comment" : "Cardinal direction: north. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N"
+          }
+        }
+      }
+    },
+    "NE" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: north-east.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NE"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NØ"
+          }
+        }
+      }
+    },
     "No altitude data for this trip" : {
       "localizations" : {
         "en" : {
@@ -372,6 +426,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ingen turer registrert ennå"
+          }
+        }
+      }
+    },
+    "NW" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: north-west.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NW"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NV"
           }
         }
       }
@@ -461,6 +533,24 @@
         }
       }
     },
+    "S" : {
+      "comment" : "Cardinal direction: south. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
+          }
+        }
+      }
+    },
     "Save" : {
       "localizations" : {
         "en" : {
@@ -473,6 +563,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lagre"
+          }
+        }
+      }
+    },
+    "SE" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: south-east.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SE"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SØ"
           }
         }
       }
@@ -505,6 +613,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start"
+          }
+        }
+      }
+    },
+    "SW" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: south-west.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SW"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SV"
           }
         }
       }
@@ -606,6 +732,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ukjent"
+          }
+        }
+      }
+    },
+    "W" : {
+      "comment" : "Cardinal direction: west. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V"
           }
         }
       }

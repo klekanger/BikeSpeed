@@ -12,7 +12,9 @@ struct StatsPanel: View {
     let altitude: Double? // meters
     let coordinate: CLLocationCoordinate2D?
     let course: Double? // degrees, nil until a reliable course exists
+    let streetName: String? // nil until reverse geocoding resolves one
     let measurementSystem: MeasurementSystem
+    let appLanguage: AppLanguage
 
     @Environment(\.locale) private var locale
     @EnvironmentObject private var motionManager: MotionManager
@@ -57,11 +59,14 @@ struct StatsPanel: View {
         )
     }
 
+    /// The street name takes over the caption line; until one resolves the line stays blank rather
+    /// than falling back to a label — the arrow and compass letter carry the cell alone.
     private var directionCell: StatCell {
         StatCell(
             systemImage: "location.north.fill",
-            value: course.map { CompassDirection(course: $0).abbreviation } ?? "--",
+            value: course.map { CompassDirection(course: $0).abbreviation(language: appLanguage) } ?? "--",
             caption: "Direction of travel",
+            captionContent: .data(streetName),
             iconRotation: .degrees(course ?? 0),
             iconTint: course == nil ? .secondary : .orange
         )
@@ -92,10 +97,12 @@ struct StatsPanel: View {
         Rectangle().fill(dividerColor).frame(height: 1)
     }
 
+    /// Hemisphere letters share the compass abbreviations' catalog keys, so they follow the same
+    /// east/west swap in Norwegian (Ø/V) that the direction cell does.
     private var formattedPosition: String {
         guard let coordinate else { return "--" }
-        let latHemisphere = coordinate.latitude >= 0 ? "N" : "S"
-        let lonHemisphere = coordinate.longitude >= 0 ? "E" : "W"
+        let latHemisphere = appLanguage.localizedString(forKey: coordinate.latitude >= 0 ? "N" : "S")
+        let lonHemisphere = appLanguage.localizedString(forKey: coordinate.longitude >= 0 ? "E" : "W")
         let lat = String(format: "%.5f°", abs(coordinate.latitude))
         let lon = String(format: "%.5f°", abs(coordinate.longitude))
         return "\(lat) \(latHemisphere)\n\(lon) \(lonHemisphere)"
@@ -112,7 +119,9 @@ struct StatsPanel: View {
             altitude: 145,
             coordinate: CLLocationCoordinate2D(latitude: 59.913868, longitude: 10.752245),
             course: 45,
-            measurementSystem: .metric
+            streetName: "Karl Johans gate",
+            measurementSystem: .metric,
+            appLanguage: .system
         )
         .frame(height: 260)
         .padding()
