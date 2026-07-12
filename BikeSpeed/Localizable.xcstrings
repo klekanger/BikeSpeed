@@ -665,6 +665,22 @@
         }
       }
     },
+    "Stop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopp"
+          }
+        }
+      }
+    },
     "SW" : {
       "comment" : "Compass abbreviation shown in the direction-of-travel cell: south-west.",
       "extractionState" : "stale",
