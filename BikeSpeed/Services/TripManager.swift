@@ -39,6 +39,16 @@ final class TripManager: ObservableObject {
     /// Guards against GPS teleport artifacts corrupting the trip total.
     private let maxPlausibleSpeed: CLLocationSpeed = 120 / 3.6 // ~120 km/h in m/s
     private let jitterFloor: CLLocationDistance = 1.0
+    /// How many implausible fixes in a row to reject before concluding the anchor is the bad one.
+    /// The teleport guard can't tell which of the two locations is the artifact, so it assumes the
+    /// new fix is — correct for an isolated GPS spike. But if `previousLocation` is the outlier
+    /// (one bad fix that got anchored, or a jump while the signal was out), every later fix measures
+    /// an implausible speed against it and is dropped, and since a dropped fix doesn't advance the
+    /// anchor, distance stops accumulating for the rest of the ride with only Reset to clear it.
+    /// A genuine spike is a single fix, so a streak means the anchor is what's wrong: re-anchor and
+    /// write off the gap, costing at most this many fixes of distance instead of the whole trip.
+    private let maxTeleportRejections = 3
+    private var teleportRejections = 0
 
     /// Auto-pause thresholds. The resume threshold sits deliberately above the pause threshold:
     /// GPS speed drifts around 0–1.5 km/h at a standstill, so a single cutoff would flap on and off.
@@ -119,6 +129,7 @@ final class TripManager: ObservableObject {
         maxSpeed = 0
         activeStart = nil
         previousLocation = nil
+        teleportRejections = 0
         tripStartDate = nil
         isAutoPaused = false
         belowThresholdSince = nil
@@ -219,6 +230,13 @@ final class TripManager: ObservableObject {
         if location.timestamp.timeIntervalSince(since) >= autoPauseDelay { beginAutoPause() }
     }
 
+    /// Moves the point distance is measured from. Clears the rejection streak with it: the streak
+    /// only ever means "the anchor looks wrong", which a new anchor settles.
+    private func anchor(on location: CLLocation) {
+        previousLocation = location
+        teleportRejections = 0
+    }
+
     private func consume(_ location: CLLocation) {
         // Wall-clock, not `location.timestamp`: this measures whether usable fixes are still
         // arriving, which is a fact about *now*, not about when the fix was taken.
@@ -226,7 +244,7 @@ final class TripManager: ObservableObject {
 
         guard state == .running else {
             // Keep a fresh anchor while idle/paused so resuming never measures a large gap-distance.
-            previousLocation = location
+            anchor(on: location)
             return
         }
 
@@ -234,7 +252,7 @@ final class TripManager: ObservableObject {
         guard !isAutoPaused else {
             // Same reasoning as above: anchoring on every fix keeps the standstill's GPS drift from
             // landing in the total as distance the moment the rider pulls away.
-            previousLocation = location
+            anchor(on: location)
             return
         }
 
@@ -245,7 +263,7 @@ final class TripManager: ObservableObject {
         }
 
         guard let previous = previousLocation else {
-            previousLocation = location
+            anchor(on: location)
             if location.verticalAccuracy >= 0 {
                 altitudeSamples.append(AltitudeSample(distance: 0, altitude: location.altitude))
             }
@@ -257,14 +275,21 @@ final class TripManager: ObservableObject {
 
         let delta = location.distance(from: previous)
         guard delta / dt <= maxPlausibleSpeed else {
-            // Likely a GPS teleport artifact — don't accumulate or advance the anchor.
+            // Likely a GPS teleport artifact: drop it and hold the anchor, so the next good fix is
+            // still measured from a place the rider actually was. But a spike is a single fix — once
+            // they pile up it's the anchor that's wrong, and holding it would freeze distance for the
+            // rest of the ride. Re-anchor and write off the gap rather than the trip.
+            teleportRejections += 1
+            if teleportRejections >= maxTeleportRejections {
+                anchor(on: location)
+            }
             return
         }
 
         if delta > max(jitterFloor, 0.5 * location.horizontalAccuracy) {
             accumulatedDistance += delta
         }
-        previousLocation = location
+        anchor(on: location)
 
         if location.verticalAccuracy >= 0,
            accumulatedDistance - lastAltitudeSampleDistance >= altitudeSampleDistanceInterval {
