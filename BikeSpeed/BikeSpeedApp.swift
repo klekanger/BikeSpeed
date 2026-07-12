@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct BikeSpeedApp: App {
     @StateObject private var locationManager: LocationManager
+    @StateObject private var addressLookupManager: AddressLookupManager
     @StateObject private var settingsStore = SettingsStore()
     @StateObject private var tripManager: TripManager
     @StateObject private var motionManager = MotionManager()
@@ -19,12 +20,14 @@ struct BikeSpeedApp: App {
         let locationManager = LocationManager()
         _locationManager = StateObject(wrappedValue: locationManager)
         _tripManager = StateObject(wrappedValue: TripManager(locationManager: locationManager))
+        _addressLookupManager = StateObject(wrappedValue: AddressLookupManager(locationManager: locationManager))
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(locationManager)
+                .environmentObject(addressLookupManager)
                 .environmentObject(settingsStore)
                 .environmentObject(tripManager)
                 .environmentObject(motionManager)

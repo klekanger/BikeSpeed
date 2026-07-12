@@ -12,6 +12,7 @@ struct StatsPanel: View {
     let altitude: Double? // meters
     let coordinate: CLLocationCoordinate2D?
     let course: Double? // degrees, nil until a reliable course exists
+    let streetName: String? // nil until reverse geocoding resolves one
     let measurementSystem: MeasurementSystem
 
     @Environment(\.locale) private var locale
@@ -57,11 +58,14 @@ struct StatsPanel: View {
         )
     }
 
+    /// The street name takes over the caption slot; until one resolves the slot is left blank
+    /// (hence `?? ""`, not a fallback label) — the arrow and compass letter carry the cell alone.
     private var directionCell: StatCell {
         StatCell(
             systemImage: "location.north.fill",
             value: course.map { CompassDirection(course: $0).abbreviation } ?? "--",
             caption: "Direction of travel",
+            captionOverride: streetName ?? "",
             iconRotation: .degrees(course ?? 0),
             iconTint: course == nil ? .secondary : .orange
         )
@@ -112,6 +116,7 @@ struct StatsPanel: View {
             altitude: 145,
             coordinate: CLLocationCoordinate2D(latitude: 59.913868, longitude: 10.752245),
             course: 45,
+            streetName: "Karl Johans gate",
             measurementSystem: .metric
         )
         .frame(height: 260)

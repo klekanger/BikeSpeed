@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var locationManager: LocationManager
+    @EnvironmentObject private var addressLookupManager: AddressLookupManager
     @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var tripManager: TripManager
     @EnvironmentObject private var tripLogStore: TripLogStore
@@ -37,6 +38,7 @@ struct ContentView: View {
                     altitude: locationManager.altitude,
                     coordinate: locationManager.coordinate,
                     course: locationManager.course,
+                    streetName: addressLookupManager.streetName,
                     measurementSystem: settingsStore.measurementSystem
                 )
                 .frame(height: 260)
@@ -93,10 +95,13 @@ struct ContentView: View {
 }
 
 #Preview {
+    let locationManager = LocationManager()
+
     ContentView()
-        .environmentObject(LocationManager())
+        .environmentObject(locationManager)
+        .environmentObject(AddressLookupManager(locationManager: locationManager))
         .environmentObject(SettingsStore())
-        .environmentObject(TripManager(locationManager: LocationManager()))
+        .environmentObject(TripManager(locationManager: locationManager))
         .environmentObject(MotionManager())
         .environmentObject(TripLogStore())
 }
