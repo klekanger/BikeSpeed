@@ -4,11 +4,14 @@ import CoreLocation
 /// The 2×2 stats grid shown under the gauge, wrapped in the same brushed-metal bezel as the
 /// speedometer. Cells, clockwise from top-left: average speed, direction of travel, distance,
 /// altitude. Tapping the average-speed cell swaps it for the trip's max speed; tapping the
-/// altitude cell swaps it for the GPS position.
+/// distance cell swaps it for the trip's duration; tapping the altitude cell swaps it for the GPS
+/// position.
 struct StatsPanel: View {
     let averageSpeed: Double // m/s
     let maxSpeed: Double // m/s
     let distance: Double // meters
+    let duration: TimeInterval // seconds of active (moving) trip time
+    let isAutoPaused: Bool
     let altitude: Double? // meters
     let coordinate: CLLocationCoordinate2D?
     let course: Double? // degrees, nil until a reliable course exists
@@ -20,6 +23,7 @@ struct StatsPanel: View {
     @EnvironmentObject private var motionManager: MotionManager
 
     @State private var showingMaxSpeed = false
+    @State private var showingDuration = false
     @State private var showingPosition = false
 
     private let cornerRadius: CGFloat = 24
@@ -72,11 +76,18 @@ struct StatsPanel: View {
         )
     }
 
+    /// Distance and duration are the two stats an auto-pause freezes, so the "Auto-paused" caption
+    /// lands here and explains both — whichever of the two the cell happens to be showing.
     private var distanceCell: StatCell {
         StatCell(
-            systemImage: "point.topleft.down.curvedto.point.bottomright.up",
-            value: measurementSystem.formattedDistance(meters: distance, locale: locale),
-            caption: "Distance"
+            systemImage: showingDuration ? "stopwatch" : "point.topleft.down.curvedto.point.bottomright.up",
+            value: showingDuration
+                ? TripDurationFormatting.formatted(seconds: duration, locale: locale)
+                : measurementSystem.formattedDistance(meters: distance, locale: locale),
+            caption: showingDuration ? "Duration" : "Distance",
+            captionContent: isAutoPaused ? .text("Auto-paused") : .name,
+            iconTint: isAutoPaused ? .secondary : .orange,
+            onTap: { showingDuration.toggle() }
         )
     }
 
@@ -116,6 +127,8 @@ struct StatsPanel: View {
             averageSpeed: 6.86,
             maxSpeed: 11.4,
             distance: 28_560,
+            duration: 4_324,
+            isAutoPaused: false,
             altitude: 145,
             coordinate: CLLocationCoordinate2D(latitude: 59.913868, longitude: 10.752245),
             course: 45,

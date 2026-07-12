@@ -12,6 +12,10 @@ struct StatCell: View {
         /// Nil renders a blank line rather than no line, so the cell stays vertically aligned with
         /// its neighbours in the grid until the data resolves.
         case data(String?)
+        /// A fixed catalog string in place of the name, as the distance cell shows "Auto-paused".
+        /// Unlike `.data` this stays a `LocalizedStringKey`, so SwiftUI resolves it against the
+        /// in-app language override — no manual bundle lookup on every render.
+        case text(LocalizedStringKey)
     }
 
     let systemImage: String
@@ -58,7 +62,7 @@ struct StatCell: View {
         .onTapGesture { onTap?() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(caption)
-        .accessibilityValue(Text(accessibilityValue))
+        .accessibilityValue(accessibilityValue)
         .accessibilityAddTraits(onTap == nil ? [] : .isButton)
     }
 
@@ -69,14 +73,24 @@ struct StatCell: View {
         case .data(let text):
             // A space, not "", so an unresolved line still occupies its height and nothing reflows.
             return Text(verbatim: text ?? " ")
+        case .text(let key):
+            return Text(key)
         }
     }
 
-    /// VoiceOver reads the label ("Direction of travel") plus this. Resolved data is worth
-    /// announcing, so it joins the value: "N, Storgata".
-    private var accessibilityValue: String {
-        guard case .data(let text?) = captionContent else { return value }
-        return "\(value), \(text)"
+    /// VoiceOver reads the label ("Direction of travel") plus this. A resolved caption is worth
+    /// announcing, so it joins the value: "N, Storgata" / "0:45, Auto-paused". A `Text` rather than
+    /// a `String` so the `.text` case can stay a `LocalizedStringKey` for SwiftUI to resolve.
+    private var accessibilityValue: Text {
+        switch captionContent {
+        case .name:
+            return Text(value)
+        case .data(let text):
+            guard let text else { return Text(value) }
+            return Text(value) + Text(verbatim: ", ") + Text(verbatim: text)
+        case .text(let key):
+            return Text(value) + Text(verbatim: ", ") + Text(key)
+        }
     }
 }
 
