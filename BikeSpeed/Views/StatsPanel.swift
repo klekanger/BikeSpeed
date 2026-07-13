@@ -110,15 +110,22 @@ struct StatsPanel: View {
     }
 
     /// The altitude page's caption line carries the live gradient the way the direction cell's
-    /// carries the street: data in place of the name, blank until there is any.
+    /// carries the street: data in place of the name. Unlike the street, the gradient is nil more
+    /// often than not (standstill, window not yet ridden full), and a bare number over a blank line
+    /// doesn't say what it is — so nil falls back to the page's name rather than to a blank.
     private var altitudeCell: StatCell {
         StatCell(
             systemImage: showingPosition ? "location" : (showingClimb ? "arrow.up.right" : "mountain.2"),
             value: altitudeCellValue,
-            captionContent: showingClimb || showingPosition ? .name : .data(formattedGrade),
+            captionContent: altitudeCaption,
             paging: .init(page: $altitudePage, names: ["Altitude", "Climb", "Position"]),
             pageIndicatorInset: bottomRowIndicatorInset
         )
+    }
+
+    private var altitudeCaption: StatCell.Caption {
+        guard showingClimb == false, showingPosition == false, let formattedGrade else { return .name }
+        return .data(formattedGrade)
     }
 
     private var altitudeCellValue: String {
