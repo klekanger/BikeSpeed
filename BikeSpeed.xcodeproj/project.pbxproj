@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		2ADBC1062FF9647800D9AB89 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2ADBC07D2FF9647800D9AB89 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2ADBC0842FF9647800D9AB89;
+			remoteInfo = BikeSpeed;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		2ADBC0852FF9647800D9AB89 /* BikeSpeed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BikeSpeed.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2ADBC1002FF9647800D9AB89 /* BikeSpeedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BikeSpeedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = BikeSpeed;
 			sourceTree = "<group>";
 		};
+		2ADBC1012FF9647800D9AB89 /* BikeSpeedTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BikeSpeedTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		2ADBC0822FF9647800D9AB89 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2ADBC1032FF9647800D9AB89 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				2ADBC0872FF9647800D9AB89 /* BikeSpeed */,
+				2ADBC1012FF9647800D9AB89 /* BikeSpeedTests */,
 				2ADBC0862FF9647800D9AB89 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				2ADBC0852FF9647800D9AB89 /* BikeSpeed.app */,
+				2ADBC1002FF9647800D9AB89 /* BikeSpeedTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = 2ADBC0852FF9647800D9AB89 /* BikeSpeed.app */;
 			productType = "com.apple.product-type.application";
 		};
+		2ADBC1052FF9647800D9AB89 /* BikeSpeedTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2ADBC10A2FF9647800D9AB89 /* Build configuration list for PBXNativeTarget "BikeSpeedTests" */;
+			buildPhases = (
+				2ADBC1022FF9647800D9AB89 /* Sources */,
+				2ADBC1032FF9647800D9AB89 /* Frameworks */,
+				2ADBC1042FF9647800D9AB89 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2ADBC1072FF9647800D9AB89 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				2ADBC1012FF9647800D9AB89 /* BikeSpeedTests */,
+			);
+			name = BikeSpeedTests;
+			packageProductDependencies = (
+			);
+			productName = BikeSpeedTests;
+			productReference = 2ADBC1002FF9647800D9AB89 /* BikeSpeedTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					2ADBC0842FF9647800D9AB89 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					2ADBC1052FF9647800D9AB89 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 2ADBC0842FF9647800D9AB89;
 					};
 				};
 			};
@@ -101,12 +153,20 @@
 			projectRoot = "";
 			targets = (
 				2ADBC0842FF9647800D9AB89 /* BikeSpeed */,
+				2ADBC1052FF9647800D9AB89 /* BikeSpeedTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		2ADBC0832FF9647800D9AB89 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2ADBC1042FF9647800D9AB89 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -123,7 +183,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2ADBC1022FF9647800D9AB89 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2ADBC1072FF9647800D9AB89 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2ADBC0842FF9647800D9AB89 /* BikeSpeed */;
+			targetProxy = 2ADBC1062FF9647800D9AB89 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2ADBC08E2FF9647900D9AB89 /* Debug */ = {
@@ -320,6 +395,50 @@
 			};
 			name = Release;
 		};
+		2ADBC1082FF9647800D9AB89 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 20260712;
+				DEVELOPMENT_TEAM = 4SB6V3C5KS;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = lekanger.BikeSpeedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BikeSpeed.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BikeSpeed";
+			};
+			name = Debug;
+		};
+		2ADBC1092FF9647800D9AB89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 20260712;
+				DEVELOPMENT_TEAM = 4SB6V3C5KS;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = lekanger.BikeSpeedTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BikeSpeed.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BikeSpeed";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -337,6 +456,15 @@
 			buildConfigurations = (
 				2ADBC0912FF9647900D9AB89 /* Debug */,
 				2ADBC0922FF9647900D9AB89 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2ADBC10A2FF9647800D9AB89 /* Build configuration list for PBXNativeTarget "BikeSpeedTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2ADBC1082FF9647800D9AB89 /* Debug */,
+				2ADBC1092FF9647800D9AB89 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

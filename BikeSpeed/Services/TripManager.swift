@@ -22,6 +22,10 @@ final class TripManager: ObservableObject {
     private var activeStart: Date?
     private var previousLocation: CLLocation?
     private var cancellable: AnyCancellable?
+    /// The wall clock, injected. Everything here that asks "what time is it now" — as opposed to
+    /// reading a fix's own `timestamp` — goes through this, so a test can drive elapsed time and the
+    /// auto-pause watchdog without sleeping.
+    private let now: @MainActor () -> Date
     /// Held strongly: subscribing to `settings.$autoPauseEnabled` retains only the publisher's
     /// subject, not the store, so without this the toggle would go silently inert wherever the
     /// caller doesn't happen to keep the store alive itself.
@@ -77,8 +81,9 @@ final class TripManager: ObservableObject {
         state == .paused && accumulatedActiveDuration >= 5 && accumulatedDistance >= 10
     }
 
-    init(locationManager: LocationManager, settings: SettingsStore) {
+    init(locationManager: LocationManager, settings: SettingsStore, now: @escaping @MainActor () -> Date = { Date() }) {
         self.settings = settings
+        self.now = now
         autoPauseEnabled = settings.autoPauseEnabled
         // `@Published` fires from `willSet`, so the new value only arrives as the sink's argument —
         // re-reading `settings.autoPauseEnabled` here would still see the old one.
@@ -90,20 +95,26 @@ final class TripManager: ObservableObject {
             self?.consume(location)
         }
         tickTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            guard let self else { return }
             Task { @MainActor in
-                self.releaseAutoPauseIfUnconfirmed()
-                guard self.activeStart != nil else { return }
-                self.elapsedActiveDuration = self.currentElapsedActiveDuration()
+                self?.tick()
             }
         }
+    }
+
+    /// The periodic work the trip clock drives: retire an auto-pause nothing is confirming any more,
+    /// and republish elapsed time so a running trip's duration ticks up between fixes. Split out of the
+    /// timer so it can be driven directly rather than waited on.
+    func tick() {
+        releaseAutoPauseIfUnconfirmed()
+        guard activeStart != nil else { return }
+        elapsedActiveDuration = currentElapsedActiveDuration()
     }
 
     func start() {
         guard state == .idle else { return }
         state = .running
         startClock()
-        tripStartDate = Date()
+        tripStartDate = now()
     }
 
     func pause() {
@@ -158,18 +169,18 @@ final class TripManager: ObservableObject {
     /// paused and not auto-paused — so these two are the only places the wall-clock total is folded
     /// up, shared by both kinds of pause.
     private func startClock() {
-        activeStart = Date()
+        activeStart = now()
     }
 
     private func suspendClock() {
         guard let activeStart else { return } // already stopped; folding again would double-count
-        accumulatedActiveDuration += Date().timeIntervalSince(activeStart)
+        accumulatedActiveDuration += now().timeIntervalSince(activeStart)
         self.activeStart = nil
         elapsedActiveDuration = accumulatedActiveDuration
     }
 
     private func currentElapsedActiveDuration() -> TimeInterval {
-        accumulatedActiveDuration + (activeStart.map { Date().timeIntervalSince($0) } ?? 0)
+        accumulatedActiveDuration + (activeStart.map { now().timeIntervalSince($0) } ?? 0)
     }
 
     private func beginAutoPause() {
@@ -202,7 +213,7 @@ final class TripManager: ObservableObject {
     /// re-arms the debounce and pauses again.
     private func releaseAutoPauseIfUnconfirmed() {
         guard isAutoPaused, let lastAcceptedFix else { return }
-        guard Date().timeIntervalSince(lastAcceptedFix) >= autoPauseFixTimeout else { return }
+        guard now().timeIntervalSince(lastAcceptedFix) >= autoPauseFixTimeout else { return }
         clearAutoPause()
     }
 
@@ -244,7 +255,7 @@ final class TripManager: ObservableObject {
     private func consume(_ location: CLLocation) {
         // Wall-clock, not `location.timestamp`: this measures whether usable fixes are still
         // arriving, which is a fact about *now*, not about when the fix was taken.
-        lastAcceptedFix = Date()
+        lastAcceptedFix = now()
 
         guard state == .running else {
             // Keep a fresh anchor while idle/paused so resuming never measures a large gap-distance.
