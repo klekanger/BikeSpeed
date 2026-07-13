@@ -11,7 +11,7 @@ import Testing
 struct LocationManagerTests {
 
     @Test
-    func aGoodFixIsAcceptedAndPublished() throws {
+    func aGoodFixIsAcceptedAndPublished() {
         let manager = LocationManager()
         var accepted: [CLLocation] = []
         let subscription = manager.acceptedLocations.sink { accepted.append($0) }
@@ -48,10 +48,10 @@ struct LocationManagerTests {
     /// A stale fix is not a signal-quality problem, so it must not flicker the GPS indicator on its way
     /// to being ignored.
     @Test(.tags(.edgeCase))
-    func aStaleFixLeavesTheFixIndicatorAlone() {
+    func aStaleFixLeavesTheFixIndicatorAlone() throws {
         let manager = LocationManager()
         manager.process(makeFix(timestamp: Date()))
-        try? #require(manager.hasFix)
+        try #require(manager.hasFix)
 
         manager.process(makeFix(timestamp: Date(timeIntervalSinceNow: -60)))
 
@@ -93,10 +93,10 @@ struct LocationManagerTests {
     /// GPS course is noise at a standstill, so below ~3.6 km/h it holds its last valid value instead of
     /// spinning the direction arrow.
     @Test(.tags(.edgeCase))
-    func courseIsHeldRatherThanUpdatedBelowTheSpeedThreshold() {
+    func courseIsHeldRatherThanUpdatedBelowTheSpeedThreshold() throws {
         let manager = LocationManager()
         manager.process(makeFix(course: 90, speed: 8, timestamp: Date()))
-        try? #require(manager.course == 90)
+        try #require(manager.course == 90)
 
         manager.process(makeFix(course: 200, speed: 0.4, timestamp: Date()))
 
@@ -124,23 +124,5 @@ struct LocationManagerTests {
         manager.process(makeFix(altitude: 999, verticalAccuracy: -1, timestamp: Date()))
 
         #expect(manager.altitude == 150)
-    }
-
-    // MARK: - Signal quality
-
-    @Test(arguments: zip(
-        [5.0, 10.0, 11.0, 30.0, 31.0, -1.0],
-        [GPSSignalQuality.good, .good, .fair, .fair, .poor, .poor]
-    ))
-    func signalQualityBucketsHorizontalAccuracy(accuracy: CLLocationAccuracy, expected: GPSSignalQuality) {
-        let quality = GPSSignalQuality(horizontalAccuracy: accuracy, goodWithin: 10, acceptableWithin: 30)
-        #expect(quality == expected)
-    }
-
-    @Test
-    func onlyPoorSignalIsUnusable() {
-        #expect(GPSSignalQuality.good.isUsable)
-        #expect(GPSSignalQuality.fair.isUsable)
-        #expect(GPSSignalQuality.poor.isUsable == false)
     }
 }

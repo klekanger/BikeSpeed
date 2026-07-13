@@ -370,12 +370,12 @@ struct TripManagerTests {
     }
 
     @Test
-    func turningTheSettingOffReleasesAnActiveAutoPause() {
+    func turningTheSettingOffReleasesAnActiveAutoPause() throws {
         let harness = TripTestHarness()
         harness.anchor()
         harness.trip.start()
         autoPause(harness)
-        try? #require(harness.trip.isAutoPaused)
+        try #require(harness.trip.isAutoPaused)
 
         harness.settings.autoPauseEnabled = false
 

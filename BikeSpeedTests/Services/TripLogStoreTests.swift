@@ -23,7 +23,7 @@ struct TripLogStoreTests {
 
     /// Views bind to `entries` directly, so the store owns the ordering rather than every caller re-sorting.
     @Test
-    func entriesAreKeptNewestFirst() throws {
+    func entriesAreKeptNewestFirst() {
         let url = temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: url) }
 
@@ -38,7 +38,7 @@ struct TripLogStoreTests {
     }
 
     @Test
-    func deletingByIdRemovesOnlyThatTrip() throws {
+    func deletingByIdRemovesOnlyThatTrip() {
         let url = temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: url) }
 
@@ -55,7 +55,7 @@ struct TripLogStoreTests {
     }
 
     @Test
-    func deletingByOffsetRemovesTheRowTheUserSwiped() throws {
+    func deletingByOffsetRemovesTheRowTheUserSwiped() {
         let url = temporaryFileURL()
         defer { try? FileManager.default.removeItem(at: url) }
 
