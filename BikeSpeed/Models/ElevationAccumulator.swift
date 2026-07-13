@@ -40,6 +40,16 @@ struct ElevationAccumulator {
         }
     }
 
+    /// Forgets the reference point but keeps the totals. For breaks in sampling — a pause, a long
+    /// standstill, a stopped-and-restarted barometer — where the readings on either side of the gap
+    /// aren't comparable: whatever altitude did in between wasn't ridden, so the next reading
+    /// anchors fresh instead of banking the difference as climb. `hasRecordedAltitude` deliberately
+    /// survives (and is stored rather than derived from the anchor for exactly this reason): data
+    /// did arrive, the trip merely re-baselined.
+    mutating func reanchor() {
+        anchor = nil
+    }
+
     mutating func reset() {
         ascent = 0
         descent = 0

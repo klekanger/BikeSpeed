@@ -65,6 +65,26 @@ struct ElevationAccumulatorTests {
         #expect(accumulator.hasRecordedAltitude == false)
     }
 
+    /// The re-baseline used across breaks in sampling (a pause, a standstill, a restarted barometer):
+    /// the readings on either side of a gap aren't comparable, so the difference between them must
+    /// anchor fresh rather than be banked as climb — but everything already earned stays earned.
+    @Test(.tags(.edgeCase))
+    func reanchoringForgetsTheReferenceButKeepsTheTotals() {
+        var accumulator = ElevationAccumulator(deadband: 1)
+        accumulator.add(altitude: 100)
+        accumulator.add(altitude: 110)
+        expectClose(accumulator.ascent, 10, within: 0.001)
+
+        accumulator.reanchor()
+
+        accumulator.add(altitude: 50) // wildly discontinuous — must anchor, not bank -60 as descent
+        #expect(accumulator.descent == 0)
+        #expect(accumulator.hasRecordedAltitude, "re-baselining is not the same as never having data")
+
+        accumulator.add(altitude: 56)
+        expectClose(accumulator.ascent, 16, within: 0.001, "the accumulator keeps working after a reanchor")
+    }
+
     @Test
     func resetClearsTheTotalsAndTheAnchor() {
         var accumulator = ElevationAccumulator(deadband: 1)

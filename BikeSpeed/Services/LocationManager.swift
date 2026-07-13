@@ -123,8 +123,8 @@ extension LocationManager: CLLocationManagerDelegate {
         }
         // else: leave `course` at its last valid value rather than snapping/jittering.
 
-        if location.verticalAccuracy >= 0 {
-            altitude = location.altitude
+        if let usableAltitude = location.usableAltitude() {
+            altitude = usableAltitude
         }
 
         coordinate = location.coordinate

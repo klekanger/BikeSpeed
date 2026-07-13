@@ -71,13 +71,27 @@ final class FakeLocationSource: LocationSource {
 
 /// Stands in for `AltimeterManager` on the `AltitudeSource` seam. There is nothing to subscribe to:
 /// `TripManager` samples `relativeAltitude` at each accepted fix, so a test just sets it between moves.
+/// `isAvailable` is a var because the real manager drops it when updates start erroring (a denied
+/// Motion & Fitness permission) — tests flip it to simulate that failure.
 @MainActor
 final class FakeAltitudeSource: AltitudeSource {
-    let isAvailable: Bool
+    var isAvailable: Bool
     var relativeAltitude: Double?
+    private(set) var isUpdating = false
 
     init(isAvailable: Bool) {
         self.isAvailable = isAvailable
+    }
+
+    func startUpdates() {
+        isUpdating = true
+    }
+
+    func stopUpdates() {
+        isUpdating = false
+        // Mirrors `AltimeterManager`: relative altitude is zeroed wherever updates start, so a
+        // reading from before the stop must never be readable afterwards.
+        relativeAltitude = nil
     }
 }
 

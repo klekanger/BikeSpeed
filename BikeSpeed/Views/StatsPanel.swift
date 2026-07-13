@@ -9,7 +9,7 @@ struct TripStats {
     let maxSpeed: Double // m/s
     let distance: Double // meters
     let duration: TimeInterval // seconds of active (moving) time; auto-paused time is excluded
-    let totalAscent: Double // meters
+    let totalAscent: Double? // meters; nil until any usable altitude has arrived — not the same as 0
     let grade: Double? // rise/run, e.g. 0.05 for 5 %; nil until the trip has ridden a window's worth
     let isAutoPaused: Bool
 }
@@ -130,17 +130,25 @@ struct StatsPanel: View {
 
     private var altitudeCellValue: String {
         if showingPosition { return formattedPosition }
-        if showingClimb { return measurementSystem.formattedAltitude(meters: trip.totalAscent, locale: locale) }
+        if showingClimb {
+            // "--" like the altitude readout below, not "0 m": a trip with no altitude data hasn't
+            // measured a flat ride, it hasn't measured anything.
+            return trip.totalAscent.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+        }
         return location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
     }
 
-    /// "▲ 4 %" climbing, "▼ 4 %" descending. Rounded to whole percent — a live gradient's decimals
-    /// are noise to a rider — and the arrow carries the sign, so the value shows its magnitude.
+    /// "▲ 4 %" climbing, "▼ 4 %" descending, a bare "0 %" on the flat. Rounded to whole percent — a
+    /// live gradient's decimals are noise to a rider — and rounded *before* the arrow is chosen: the
+    /// raw sign flaps around zero on flat ground, and pairing it with a rounded magnitude would show
+    /// the self-contradictory "▼ 0 %".
     private var formattedGrade: String? {
         guard let grade = trip.grade else { return nil }
+        let wholePercent = (abs(grade) * 100).rounded()
+        let magnitude = (wholePercent / 100).formatted(.percent.precision(.fractionLength(0)).locale(locale))
+        guard wholePercent > 0 else { return magnitude }
         let arrow = grade < 0 ? "▼" : "▲"
-        let percent = abs(grade).formatted(.percent.precision(.fractionLength(0)).locale(locale))
-        return "\(arrow) \(percent)"
+        return "\(arrow) \(magnitude)"
     }
 
     /// The bezel is stroked over the panel's outer edge, so it eats into the bottom row's cells in a
