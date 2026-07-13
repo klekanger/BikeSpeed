@@ -113,6 +113,8 @@ struct TripLogStoreTests {
         expectClose(entry.distance, 12_400)
         expectClose(entry.maxSpeed, 11.4, within: 0.01)
         #expect(entry.altitudeProfile.count == 2)
+        #expect(entry.totalAscent == nil, "a trip recorded before v2 genuinely has no ascent figure")
+        #expect(entry.totalDescent == nil)
     }
 
     // MARK: - Helpers
@@ -133,7 +135,9 @@ struct TripLogStoreTests {
             distance: distance,
             averageSpeed: 6.8,
             maxSpeed: 11.4,
-            altitudeProfile: []
+            altitudeProfile: [],
+            totalAscent: nil,
+            totalDescent: nil
         )
     }
 }

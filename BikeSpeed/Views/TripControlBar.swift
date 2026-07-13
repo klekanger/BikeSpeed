@@ -115,7 +115,7 @@ struct TripControlBar: View {
 #Preview {
     ZStack {
         Color.black
-        TripControlBar(tripManager: TripManager(locationManager: LocationManager(), settings: SettingsStore()))
+        TripControlBar(tripManager: TripManager(locationManager: LocationManager(), altimeter: AltimeterManager(), settings: SettingsStore()))
             .environmentObject(TripLogStore())
     }
     .ignoresSafeArea()

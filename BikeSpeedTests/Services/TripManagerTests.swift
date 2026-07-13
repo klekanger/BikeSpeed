@@ -441,6 +441,188 @@ struct TripManagerTests {
         #expect(harness.locationSource.backgroundUpdatesEnabled)
     }
 
+    // MARK: - Elevation
+
+    /// Elevation rides the GPS funnel — sampled at each accepted fix — so ascent and grade inherit the
+    /// same running/auto-pause gating that already guards distance. The harness has no barometer unless
+    /// a test asks for one, so the plain cases exercise the GPS-altitude fallback.
+
+    @Test
+    func ascentAccumulatesFromGPSAltitudeWhileRiding() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 20, seconds: 2, altitude: 100) // baseline sample
+        for step in 1...10 {
+            harness.move(meters: 20, seconds: 2, altitude: 100 + Double(step) * 5)
+        }
+
+        expectClose(harness.trip.totalAscent, 50)
+        #expect(harness.trip.totalDescent == 0)
+    }
+
+    @Test
+    func descentIsRecordedAlongsideAscent() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 20, seconds: 2, altitude: 100)
+        for step in 1...4 {
+            harness.move(meters: 20, seconds: 2, altitude: 100 + Double(step) * 5) // up 20
+        }
+        for step in 1...6 {
+            harness.move(meters: 20, seconds: 2, altitude: 120 - Double(step) * 5) // down 30
+        }
+
+        expectClose(harness.trip.totalAscent, 20)
+        expectClose(harness.trip.totalDescent, 30)
+    }
+
+    /// GPS altitude wobbles by metres at constant true height; the fallback's wider deadband exists so
+    /// that wobble never turns into a phantom climb.
+    @Test(.tags(.edgeCase))
+    func gpsAltitudeNoiseUnderTheDeadbandAddsNoAscent() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        for step in 0..<20 {
+            harness.move(meters: 20, seconds: 2, altitude: 100 + (step.isMultiple(of: 2) ? 0 : 2))
+        }
+
+        #expect(harness.trip.totalAscent == 0)
+        #expect(harness.trip.totalDescent == 0)
+    }
+
+    @Test
+    func theBarometerIsPreferredOverGPSAltitudeWhenAvailable() {
+        let harness = TripTestHarness(barometerAvailable: true)
+        harness.anchor()
+        harness.trip.start()
+
+        harness.altimeter.relativeAltitude = 0
+        harness.move(meters: 20, seconds: 2, altitude: 500) // GPS altitude is wild — it must be ignored
+        harness.altimeter.relativeAltitude = 4
+        harness.move(meters: 20, seconds: 2, altitude: 700)
+
+        expectClose(harness.trip.totalAscent, 4, within: 0.001)
+    }
+
+    @Test
+    func elevationDoesNotAccumulateWithoutARunningTrip() {
+        let harness = TripTestHarness()
+        harness.anchor()
+
+        harness.move(meters: 20, seconds: 2, altitude: 150)
+        harness.move(meters: 20, seconds: 2, altitude: 200)
+
+        #expect(harness.trip.totalAscent == 0)
+        #expect(harness.trip.currentGrade == nil)
+    }
+
+    @Test
+    func elevationFreezesDuringAManualPause() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 20, seconds: 2, altitude: 100)
+        harness.move(meters: 20, seconds: 2, altitude: 110)
+        harness.trip.pause()
+
+        harness.move(meters: 20, seconds: 2, altitude: 200)
+
+        expectClose(harness.trip.totalAscent, 10)
+    }
+
+    /// Barometric pressure drifts with the weather, which reads as altitude change while the bike sits
+    /// still. Auto-pause stops elevation sampling exactly as it stops distance, so a long red light in a
+    /// building weather front adds no climb.
+    @Test(.tags(.edgeCase))
+    func barometricDriftDuringAnAutoPauseAddsNoAscent() throws {
+        let harness = TripTestHarness(barometerAvailable: true)
+        harness.anchor()
+        harness.trip.start()
+        harness.altimeter.relativeAltitude = 0
+        harness.move(meters: 20, seconds: 2)
+        autoPause(harness)
+        try #require(harness.trip.isAutoPaused)
+
+        harness.altimeter.relativeAltitude = 6 // pressure drift at the kerb
+        harness.move(meters: 0.1, speed: 0.3) // still standing; the fix must not sample the drift
+
+        #expect(harness.trip.isAutoPaused)
+        #expect(harness.trip.totalAscent == 0)
+    }
+
+    @Test
+    func gradeReadsTheCurrentClimbOnceItsWindowFills() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 10, seconds: 1, altitude: 100)
+        #expect(harness.trip.currentGrade == nil, "no grade before the window's worth of riding")
+
+        for step in 1...5 {
+            harness.move(meters: 10, seconds: 1, altitude: 100 + Double(step) * 0.5) // 5 %
+        }
+
+        expectClose(try #require(harness.trip.currentGrade), 0.05, within: 0.005)
+    }
+
+    @Test
+    func resetClearsElevationAndGrade() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 20, seconds: 2, altitude: 100)
+        for step in 1...5 {
+            harness.move(meters: 20, seconds: 2, altitude: 100 + Double(step) * 5)
+        }
+        harness.trip.pause()
+
+        harness.trip.reset()
+
+        #expect(harness.trip.totalAscent == 0)
+        #expect(harness.trip.totalDescent == 0)
+        #expect(harness.trip.currentGrade == nil)
+    }
+
+    @Test
+    func theLogEntryCarriesAscentAndDescent() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 20, seconds: 2, altitude: 100)
+        for step in 1...4 {
+            harness.move(meters: 20, seconds: 2, altitude: 100 + Double(step) * 5)
+        }
+        harness.trip.pause()
+
+        let entry = try #require(harness.trip.makeLogEntry())
+
+        expectClose(try #require(entry.totalAscent), 20)
+        expectClose(try #require(entry.totalDescent), 0, within: 0.001)
+    }
+
+    /// Nil, not zero: a trip whose fixes never carried a usable altitude has no answer to "how much did
+    /// you climb", and writing 0 would be indistinguishable from a genuinely flat ride.
+    @Test(.tags(.edgeCase))
+    func aTripWithoutAltitudeDataSavesNilRatherThanZero() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 100, seconds: 10, verticalAccuracy: -1)
+        harness.trip.pause()
+
+        let entry = try #require(harness.trip.makeLogEntry())
+
+        #expect(entry.totalAscent == nil)
+        #expect(entry.totalDescent == nil)
+    }
+
     // MARK: - Saving
 
     @Test

@@ -12,6 +12,12 @@ final class TripManager: ObservableObject {
     @Published private(set) var elapsedActiveDuration: TimeInterval = 0
     @Published private(set) var maxSpeed: CLLocationSpeed = 0 // m/s, top instantaneous speed seen while running
 
+    @Published private(set) var totalAscent: CLLocationDistance = 0 // meters
+    @Published private(set) var totalDescent: CLLocationDistance = 0 // meters, positive
+    /// Rise over a trailing ~30 m of run — e.g. 0.05 for a 5 % climb. Nil until enough of the trip
+    /// has been ridden to measure one honestly; see `GradeCalculator`.
+    @Published private(set) var currentGrade: Double?
+
     /// Whether a running trip has stopped accumulating because the rider is standing still. This is
     /// deliberately a flag on `.running` rather than a `TripState` case: a manual pause must stay
     /// distinguishable from an auto-pause (otherwise rolling forward would resume a trip the user
@@ -44,6 +50,18 @@ final class TripManager: ObservableObject {
     private var altitudeSamples: [AltitudeSample] = []
     private var lastAltitudeSampleDistance: CLLocationDistance = 0
     private let altitudeSampleDistanceInterval: CLLocationDistance = 25 // meters
+
+    /// The barometer. Ascent/descent and grade are *sampled* from it at each accepted GPS fix rather
+    /// than accumulated on a subscription of its own, so they inherit `consume(_:)`'s running and
+    /// auto-pause gating for free — which matters, because barometric pressure drifts with the
+    /// weather and would otherwise bank phantom climb while the bike sits parked.
+    private let altimeter: any AltitudeSource
+    private var elevation: ElevationAccumulator
+    private var grade = GradeCalculator(windowDistance: 30)
+    /// Deadbands per altitude source: the barometer resolves to ~±1 m; the GPS fallback (used where
+    /// there is no barometer, notably the Simulator) wobbles by metres and needs the wider band.
+    private static let barometerDeadband: CLLocationDistance = 1
+    private static let gpsAltitudeDeadband: CLLocationDistance = 3
 
     /// Guards against GPS teleport artifacts corrupting the trip total.
     private let maxPlausibleSpeed: CLLocationSpeed = 120 / 3.6 // ~120 km/h in m/s
@@ -86,10 +104,19 @@ final class TripManager: ObservableObject {
         state == .paused && accumulatedActiveDuration >= 5 && accumulatedDistance >= 10
     }
 
-    init(locationManager: any LocationSource, settings: SettingsStore, now: @escaping @MainActor () -> Date = { Date() }) {
+    init(
+        locationManager: any LocationSource,
+        altimeter: any AltitudeSource,
+        settings: SettingsStore,
+        now: @escaping @MainActor () -> Date = { Date() }
+    ) {
         self.locationSource = locationManager
+        self.altimeter = altimeter
         self.settings = settings
         self.now = now
+        elevation = ElevationAccumulator(
+            deadband: altimeter.isAvailable ? Self.barometerDeadband : Self.gpsAltitudeDeadband
+        )
         autoPauseEnabled = settings.autoPauseEnabled
         // `@Published` fires from `willSet`, so the new value only arrives as the sink's argument —
         // re-reading `settings.autoPauseEnabled` here would still see the old one.
@@ -155,6 +182,11 @@ final class TripManager: ObservableObject {
         lastAcceptedFix = nil
         altitudeSamples.removeAll()
         lastAltitudeSampleDistance = 0
+        elevation.reset()
+        grade.reset()
+        totalAscent = 0
+        totalDescent = 0
+        currentGrade = nil
         state = .idle
         locationSource.setBackgroundUpdates(false)
     }
@@ -171,7 +203,11 @@ final class TripManager: ObservableObject {
             distance: accumulatedDistance,
             averageSpeed: averageSpeed,
             maxSpeed: maxSpeed,
-            altitudeProfile: altitudeSamples
+            altitudeProfile: altitudeSamples,
+            // Nil when no fix ever carried a usable altitude: "we don't know" must stay
+            // distinguishable from "it was flat". See `TripLogEntry`.
+            totalAscent: elevation.hasRecordedAltitude ? totalAscent : nil,
+            totalDescent: elevation.hasRecordedAltitude ? totalDescent : nil
         )
     }
 
@@ -292,6 +328,7 @@ final class TripManager: ObservableObject {
             if location.verticalAccuracy >= 0 {
                 altitudeSamples.append(AltitudeSample(distance: 0, altitude: location.altitude))
             }
+            sampleElevation(from: location)
             return
         }
 
@@ -321,5 +358,27 @@ final class TripManager: ObservableObject {
             altitudeSamples.append(AltitudeSample(distance: accumulatedDistance, altitude: location.altitude))
             lastAltitudeSampleDistance = accumulatedDistance
         }
+
+        sampleElevation(from: location)
+    }
+
+    /// Reads the current altitude — barometer when the device has one, the fix's GPS altitude
+    /// otherwise — into the ascent/descent totals and the grade window. Only reached by a fix that
+    /// passed every guard above, which is the gating the elevation figures rely on (see `altimeter`).
+    private func sampleElevation(from location: CLLocation) {
+        let altitude: CLLocationDistance?
+        if altimeter.isAvailable {
+            altitude = altimeter.relativeAltitude
+        } else {
+            altitude = location.verticalAccuracy >= 0 ? location.altitude : nil
+        }
+        guard let altitude else { return }
+
+        elevation.add(altitude: altitude)
+        totalAscent = elevation.ascent
+        totalDescent = elevation.descent
+
+        grade.add(distance: accumulatedDistance, altitude: altitude)
+        currentGrade = grade.grade
     }
 }

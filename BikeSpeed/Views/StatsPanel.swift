@@ -9,6 +9,8 @@ struct TripStats {
     let maxSpeed: Double // m/s
     let distance: Double // meters
     let duration: TimeInterval // seconds of active (moving) time; auto-paused time is excluded
+    let totalAscent: Double // meters
+    let grade: Double? // rise/run, e.g. 0.05 for 5 %; nil until the trip has ridden a window's worth
     let isAutoPaused: Bool
 }
 
@@ -40,7 +42,8 @@ struct StatsPanel: View {
 
     private var showingMaxSpeed: Bool { speedPage == 1 }
     private var showingDuration: Bool { distancePage == 1 }
-    private var showingPosition: Bool { altitudePage == 1 }
+    private var showingClimb: Bool { altitudePage == 1 }
+    private var showingPosition: Bool { altitudePage == 2 }
 
     private let cornerRadius: CGFloat = 24
     private let bezelWidth: CGFloat = 5
@@ -106,13 +109,31 @@ struct StatsPanel: View {
         )
     }
 
+    /// The altitude page's caption line carries the live gradient the way the direction cell's
+    /// carries the street: data in place of the name, blank until there is any.
     private var altitudeCell: StatCell {
         StatCell(
-            systemImage: showingPosition ? "location" : "mountain.2",
-            value: showingPosition ? formattedPosition : (location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"),
-            paging: .init(page: $altitudePage, names: ["Altitude", "Position"]),
+            systemImage: showingPosition ? "location" : (showingClimb ? "arrow.up.right" : "mountain.2"),
+            value: altitudeCellValue,
+            captionContent: showingClimb || showingPosition ? .name : .data(formattedGrade),
+            paging: .init(page: $altitudePage, names: ["Altitude", "Climb", "Position"]),
             pageIndicatorInset: bottomRowIndicatorInset
         )
+    }
+
+    private var altitudeCellValue: String {
+        if showingPosition { return formattedPosition }
+        if showingClimb { return measurementSystem.formattedAltitude(meters: trip.totalAscent, locale: locale) }
+        return location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+    }
+
+    /// "▲ 4 %" climbing, "▼ 4 %" descending. Rounded to whole percent — a live gradient's decimals
+    /// are noise to a rider — and the arrow carries the sign, so the value shows its magnitude.
+    private var formattedGrade: String? {
+        guard let grade = trip.grade else { return nil }
+        let arrow = grade < 0 ? "▼" : "▲"
+        let percent = abs(grade).formatted(.percent.precision(.fractionLength(0)).locale(locale))
+        return "\(arrow) \(percent)"
     }
 
     /// The bezel is stroked over the panel's outer edge, so it eats into the bottom row's cells in a
@@ -151,6 +172,8 @@ struct StatsPanel: View {
                 maxSpeed: 11.4,
                 distance: 28_560,
                 duration: 4_324,
+                totalAscent: 312,
+                grade: 0.042,
                 isAutoPaused: false
             ),
             location: LocationReadout(

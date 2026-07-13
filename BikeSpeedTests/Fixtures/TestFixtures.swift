@@ -69,6 +69,18 @@ final class FakeLocationSource: LocationSource {
     }
 }
 
+/// Stands in for `AltimeterManager` on the `AltitudeSource` seam. There is nothing to subscribe to:
+/// `TripManager` samples `relativeAltitude` at each accepted fix, so a test just sets it between moves.
+@MainActor
+final class FakeAltitudeSource: AltitudeSource {
+    let isAvailable: Bool
+    var relativeAltitude: Double?
+
+    init(isAvailable: Bool) {
+        self.isAvailable = isAvailable
+    }
+}
+
 /// Drives a `TripManager` the way a ride does: fixes arrive from the location source's accepted-fix
 /// subject, and the clock moves only when the test says so.
 ///
@@ -78,21 +90,26 @@ final class FakeLocationSource: LocationSource {
 final class TripTestHarness {
     let clock = TestClock()
     let locationSource = FakeLocationSource()
+    /// Unavailable by default, so a plain harness rides the GPS-altitude fallback — the fixes already
+    /// carry an altitude — and only the barometer-specific tests opt in to the barometer.
+    let altimeter: FakeAltitudeSource
     let settings: SettingsStore
     let trip: TripManager
 
     private var coordinate = Fix.oslo
     private let suiteName: String
 
-    init(autoPauseEnabled: Bool = true) {
+    init(autoPauseEnabled: Bool = true, barometerAvailable: Bool = false) {
         suiteName = "BikeSpeedTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         settings = SettingsStore(defaults: defaults)
         settings.autoPauseEnabled = autoPauseEnabled
+        altimeter = FakeAltitudeSource(isAvailable: barometerAvailable)
 
         let clock = self.clock
         trip = TripManager(
             locationManager: locationSource,
+            altimeter: altimeter,
             settings: settings,
             now: { clock.now }
         )
@@ -115,6 +132,7 @@ final class TripTestHarness {
         meters: CLLocationDistance,
         seconds: TimeInterval = 1,
         speed: CLLocationSpeed? = nil,
+        altitude: CLLocationDistance = 100,
         horizontalAccuracy: CLLocationAccuracy = 5,
         verticalAccuracy: CLLocationAccuracy = 5
     ) {
@@ -122,6 +140,7 @@ final class TripTestHarness {
         coordinate = Fix.north(of: coordinate, meters: meters)
         send(makeFix(
             coordinate: coordinate,
+            altitude: altitude,
             horizontalAccuracy: horizontalAccuracy,
             verticalAccuracy: verticalAccuracy,
             speed: speed ?? (meters / seconds),
