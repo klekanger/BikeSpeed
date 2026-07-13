@@ -382,6 +382,65 @@ struct TripManagerTests {
         #expect(harness.trip.isAutoPaused == false)
     }
 
+    // MARK: - Background recording
+
+    /// GPS in the background costs battery, so it's held exactly for the span of a recording: on while
+    /// the trip is running, off the moment it isn't. Asserted against the fake's recorded state — the
+    /// behaviour is "TripManager asked for it", never how CoreLocation honours the ask.
+
+    @Test
+    func backgroundUpdatesAreHeldExactlyWhileTheTripRecords() {
+        let harness = TripTestHarness()
+        #expect(harness.locationSource.backgroundUpdatesEnabled == false, "merely constructing a trip must not hold GPS awake")
+
+        harness.trip.start()
+        #expect(harness.locationSource.backgroundUpdatesEnabled)
+
+        harness.trip.pause()
+        #expect(harness.locationSource.backgroundUpdatesEnabled == false)
+
+        harness.trip.resume()
+        #expect(harness.locationSource.backgroundUpdatesEnabled)
+    }
+
+    @Test
+    func resettingATripReleasesBackgroundUpdates() {
+        let harness = TripTestHarness()
+        harness.trip.start()
+        harness.trip.pause()
+
+        harness.trip.reset()
+
+        #expect(harness.locationSource.backgroundUpdatesEnabled == false)
+    }
+
+    /// Fixes flow whenever the app is open — the gauge is live from launch — but a trip nobody started
+    /// must not be the thing keeping GPS running under a locked screen.
+    @Test
+    func fixesArrivingWithoutATripDoNotRequestBackgroundUpdates() {
+        let harness = TripTestHarness()
+        harness.anchor()
+
+        harness.move(meters: 50, seconds: 5)
+
+        #expect(harness.locationSource.backgroundUpdatesEnabled == false)
+    }
+
+    /// An auto-pause is still a recording: the only way out of it is a fix above the resume threshold,
+    /// and with the phone locked at a red light that fix can only arrive if GPS stays on. Releasing
+    /// background updates here would freeze the trip at the first light after the screen locks.
+    @Test(.tags(.edgeCase))
+    func anAutoPauseDoesNotReleaseBackgroundUpdates() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        autoPause(harness)
+
+        #expect(harness.trip.isAutoPaused)
+        #expect(harness.locationSource.backgroundUpdatesEnabled)
+    }
+
     // MARK: - Saving
 
     @Test
