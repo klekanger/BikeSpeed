@@ -88,6 +88,81 @@ struct LocationManagerTests {
         #expect(manager.altitude == 150)
     }
 
+    // MARK: - Speed
+
+    /// The bug this deadband exists for: a parked bike doesn't report 0 m/s, it reports a few tenths of
+    /// one, and the gauge drew that as a needle creeping to 1–2 km/h and back. A speed smaller than the
+    /// fix's own error bar says nothing, so it must read as standing still.
+    @Test(.tags(.edgeCase))
+    func aSpeedInsideItsOwnErrorBarReadsAsStandingStill() {
+        let manager = LocationManager()
+
+        manager.process(makeFix(speed: 0.4, speedAccuracy: 0.5, timestamp: Date()))
+
+        #expect(manager.rawSpeed == 0)
+    }
+
+    /// The reason the deadband tracks `speedAccuracy` rather than being one fixed width: indoors and in
+    /// street canyons the fix gets noisier and the phantom speed grows with it, and the fix says so.
+    @Test(.tags(.edgeCase))
+    func aNoisierFixWidensTheDeadbandThatSilencesIt() {
+        let manager = LocationManager()
+
+        manager.process(makeFix(speed: 0.9, speedAccuracy: 2, timestamp: Date()))
+
+        #expect(manager.rawSpeed == 0, "a 0.9 m/s reading with a 2 m/s error bar is not movement")
+    }
+
+    /// And the reason it's capped: an error bar can be pessimistic enough to swallow a genuine ride, and
+    /// a rider actually doing 18 km/h must see 18 km/h no matter how little CoreLocation trusts itself.
+    @Test(.tags(.edgeCase))
+    func aRealRidingSpeedSurvivesAPessimisticErrorBar() {
+        let manager = LocationManager()
+
+        manager.process(makeFix(speed: 5, speedAccuracy: 3, timestamp: Date()))
+
+        expectClose(manager.rawSpeed, 5, within: 0.01)
+    }
+
+    /// A negative `speedAccuracy` is CoreLocation's "no idea" sentinel, so the deadband falls back to its
+    /// fixed floor — narrow enough that anything above walking pace still registers.
+    @Test(.tags(.edgeCase))
+    func aFixWithoutASpeedAccuracyFallsBackToTheFixedFloor() {
+        let manager = LocationManager()
+
+        manager.process(makeFix(speed: 0.3, speedAccuracy: -1, timestamp: Date()))
+        #expect(manager.rawSpeed == 0)
+
+        manager.process(makeFix(speed: 4, speedAccuracy: -1, timestamp: Date()))
+        expectClose(manager.rawSpeed, 4, within: 0.01)
+    }
+
+    /// CoreLocation's "speed unknown" sentinel is negative, and the deadband subsumes it — anything at or
+    /// below the noise floor is a standstill, whether it's noise or an admission of ignorance.
+    @Test(.tags(.edgeCase))
+    func theUnknownSpeedSentinelReadsAsStandingStill() {
+        let manager = LocationManager()
+
+        manager.process(makeFix(speed: -1, timestamp: Date()))
+
+        #expect(manager.rawSpeed == 0)
+    }
+
+    /// What the rider actually looks at is the smoothed value, and smoothing a standstill's noise only
+    /// spreads it out — the needle has to come to rest at zero and stay there.
+    @Test
+    func theGaugeSettlesAtZeroWhenTheRiderStops() throws {
+        let manager = LocationManager()
+        manager.process(makeFix(speed: 8, timestamp: Date()))
+        try #require(manager.displaySpeed > 0)
+
+        for _ in 0..<20 {
+            manager.process(makeFix(speed: 0.45, speedAccuracy: 0.8, timestamp: Date()))
+        }
+
+        expectClose(manager.displaySpeed, 0, within: 0.01, "the needle must rest at zero, not hover")
+    }
+
     // MARK: - Course
 
     /// GPS course is noise at a standstill, so below ~3.6 km/h it holds its last valid value instead of
