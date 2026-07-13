@@ -4,6 +4,7 @@ struct SettingsView: View {
     @ObservedObject var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
@@ -43,6 +44,22 @@ struct SettingsView: View {
                     Text("Trip")
                 } footer: {
                     Text("Pauses distance and time automatically when you stop.")
+                }
+
+                // Only after an actual denial on barometer hardware — the prompt itself can never
+                // be re-shown, so the Settings toggle is the one way back (see the predicate's doc).
+                if AltimeterManager.needsMotionPermissionHint() {
+                    Section {
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        }
+                    } header: {
+                        Text("Climb")
+                    } footer: {
+                        Text("Motion & Fitness is off, so climb is measured by GPS. Turn it on for more accurate climb readings.")
+                    }
                 }
 
                 Section("Gauge") {
