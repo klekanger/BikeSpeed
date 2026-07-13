@@ -92,7 +92,7 @@ struct StatCell: View {
                 .accessibilityHidden(true)
 
             Text(value)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: valueFontSize, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.opacity)
                 .multilineTextAlignment(.center)
@@ -111,6 +111,13 @@ struct StatCell: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .bottom) { pageIndicator }
+    }
+
+    /// A value that breaks across two lines — the GPS position, which is the one readout built with
+    /// a newline in it — fills the cell top to bottom and crowds the caption under it. Two lines of
+    /// this are still wider than any one-line readout, so it shrinks rather than the cell growing.
+    private var valueFontSize: CGFloat {
+        value.contains("\n") ? 16 : 20
     }
 
     /// The stat's name: the caption line's content unless `captionContent` replaces it, and always
