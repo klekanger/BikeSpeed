@@ -58,10 +58,11 @@ final class LocationManager: NSObject, ObservableObject {
 }
 
 extension LocationManager: LocationSource {
-    /// Requires `UIBackgroundModes = location` in the Info.plist — setting this without the capability
-    /// is a runtime crash, so the two ship together (see `INFOPLIST_KEY_UIBackgroundModes` in the
-    /// project file). WhenInUse authorization is sufficient; the indicator flag keeps iOS showing the
-    /// location pill while recording continues under a locked screen, which is the honest thing to do.
+    /// Requires `UIBackgroundModes = location` — setting this without the capability is a runtime
+    /// crash, so the two ship together (the key lives in the partial `Info.plist` at the repo root;
+    /// it has no working `INFOPLIST_KEY_*` equivalent). WhenInUse authorization is sufficient; the
+    /// indicator flag keeps iOS showing the location pill while recording continues under a locked
+    /// screen, which is the honest thing to do.
     func setBackgroundUpdates(_ enabled: Bool) {
         manager.allowsBackgroundLocationUpdates = enabled
         manager.showsBackgroundLocationIndicator = enabled
