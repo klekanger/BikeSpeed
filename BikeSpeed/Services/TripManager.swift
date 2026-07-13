@@ -21,6 +21,11 @@ final class TripManager: ObservableObject {
     private var accumulatedActiveDuration: TimeInterval = 0
     private var activeStart: Date?
     private var previousLocation: CLLocation?
+    /// Retained so the trip can call back into it: background location updates are requested for
+    /// exactly the span of a recording — on at `start()`/`resume()`, off at `pause()`/`reset()`.
+    /// An auto-pause deliberately does *not* release them: its only exit is a fix above the resume
+    /// threshold, which can never arrive under a locked screen once GPS has been let go.
+    private let locationSource: any LocationSource
     private var cancellable: AnyCancellable?
     /// The wall clock, injected. Everything here that asks "what time is it now" — as opposed to
     /// reading a fix's own `timestamp` — goes through this, so a test can drive elapsed time and the
@@ -81,7 +86,8 @@ final class TripManager: ObservableObject {
         state == .paused && accumulatedActiveDuration >= 5 && accumulatedDistance >= 10
     }
 
-    init(locationManager: LocationManager, settings: SettingsStore, now: @escaping @MainActor () -> Date = { Date() }) {
+    init(locationManager: any LocationSource, settings: SettingsStore, now: @escaping @MainActor () -> Date = { Date() }) {
+        self.locationSource = locationManager
         self.settings = settings
         self.now = now
         autoPauseEnabled = settings.autoPauseEnabled
@@ -115,6 +121,7 @@ final class TripManager: ObservableObject {
         state = .running
         startClock()
         tripStartDate = now()
+        locationSource.setBackgroundUpdates(true)
     }
 
     func pause() {
@@ -124,12 +131,14 @@ final class TripManager: ObservableObject {
         state = .paused
         suspendClock()
         clearAutoPause()
+        locationSource.setBackgroundUpdates(false)
     }
 
     func resume() {
         guard state == .paused else { return }
         startClock()
         state = .running
+        locationSource.setBackgroundUpdates(true)
     }
 
     func reset() {
@@ -147,6 +156,7 @@ final class TripManager: ObservableObject {
         altitudeSamples.removeAll()
         lastAltitudeSampleDistance = 0
         state = .idle
+        locationSource.setBackgroundUpdates(false)
     }
 
     /// Snapshots the current trip into a saveable log entry. `nil` if there's no paused trip to

@@ -56,7 +56,20 @@ func makeFix(
     )
 }
 
-/// Drives a `TripManager` the way a ride does: fixes arrive from `LocationManager`'s accepted-fix
+/// Stands in for `LocationManager` on the `LocationSource` seam. Fixes go straight into the subject —
+/// the trip tests were never about the GPS filtering, which has its own suite — and every background-
+/// updates request is recorded so tests can assert on what `TripManager` asked for, not on CoreLocation.
+@MainActor
+final class FakeLocationSource: LocationSource {
+    let acceptedLocations = PassthroughSubject<CLLocation, Never>()
+    private(set) var backgroundUpdatesEnabled = false
+
+    func setBackgroundUpdates(_ enabled: Bool) {
+        backgroundUpdatesEnabled = enabled
+    }
+}
+
+/// Drives a `TripManager` the way a ride does: fixes arrive from the location source's accepted-fix
 /// subject, and the clock moves only when the test says so.
 ///
 /// `move(meters:)` is the primary verb — it advances the clock, walks the rider north, and feeds in the
@@ -64,7 +77,7 @@ func makeFix(
 @MainActor
 final class TripTestHarness {
     let clock = TestClock()
-    let locationManager = LocationManager()
+    let locationSource = FakeLocationSource()
     let settings: SettingsStore
     let trip: TripManager
 
@@ -79,7 +92,7 @@ final class TripTestHarness {
 
         let clock = self.clock
         trip = TripManager(
-            locationManager: locationManager,
+            locationManager: locationSource,
             settings: settings,
             now: { clock.now }
         )
@@ -123,7 +136,7 @@ final class TripTestHarness {
     }
 
     func send(_ location: CLLocation) {
-        locationManager.acceptedLocations.send(location)
+        locationSource.acceptedLocations.send(location)
     }
 }
 

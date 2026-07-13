@@ -37,6 +37,10 @@ final class LocationManager: NSObject, ObservableObject {
         manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         manager.activityType = .otherNavigation
         manager.distanceFilter = kCLDistanceFilterNone
+        // Defaults to true — and with `activityType = .otherNavigation`, iOS pauses updates when it
+        // decides the rider has stopped and never resumes them, which presents as the app freezing
+        // mid-ride. The stopping decision is `TripManager`'s (auto-pause), not the OS's.
+        manager.pausesLocationUpdatesAutomatically = false
         authorizationStatus = manager.authorizationStatus
     }
 
@@ -50,6 +54,18 @@ final class LocationManager: NSObject, ObservableObject {
 
     func stopUpdating() {
         manager.stopUpdatingLocation()
+    }
+}
+
+extension LocationManager: LocationSource {
+    /// Requires `UIBackgroundModes = location` — setting this without the capability is a runtime
+    /// crash, so the two ship together (the key lives in the partial `Info.plist` at the repo root;
+    /// it has no working `INFOPLIST_KEY_*` equivalent). WhenInUse authorization is sufficient; the
+    /// indicator flag keeps iOS showing the location pill while recording continues under a locked
+    /// screen, which is the honest thing to do.
+    func setBackgroundUpdates(_ enabled: Bool) {
+        manager.allowsBackgroundLocationUpdates = enabled
+        manager.showsBackgroundLocationIndicator = enabled
     }
 }
 
