@@ -13,23 +13,27 @@ final class SettingsStore: ObservableObject {
     }
 
     @Published var maxGaugeSpeedKMH: Double {
-        didSet { UserDefaults.standard.set(maxGaugeSpeedKMH, forKey: Keys.maxGaugeSpeedKMH) }
+        didSet { defaults.set(maxGaugeSpeedKMH, forKey: Keys.maxGaugeSpeedKMH) }
     }
 
     @Published var measurementSystem: MeasurementSystem {
-        didSet { UserDefaults.standard.set(measurementSystem.rawValue, forKey: Keys.measurementSystem) }
+        didSet { defaults.set(measurementSystem.rawValue, forKey: Keys.measurementSystem) }
     }
 
     @Published var appLanguage: AppLanguage {
-        didSet { UserDefaults.standard.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
+        didSet { defaults.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
     }
 
     @Published var autoPauseEnabled: Bool {
-        didSet { UserDefaults.standard.set(autoPauseEnabled, forKey: Keys.autoPauseEnabled) }
+        didSet { defaults.set(autoPauseEnabled, forKey: Keys.autoPauseEnabled) }
     }
 
-    init() {
-        let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
+
+    /// Injectable so tests get a throwaway suite instead of scribbling on — and reading back from —
+    /// the real defaults the app and the developer share.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         maxGaugeSpeedKMH = (defaults.object(forKey: Keys.maxGaugeSpeedKMH) as? Double) ?? 60
         measurementSystem = defaults.string(forKey: Keys.measurementSystem)
             .flatMap(MeasurementSystem.init(rawValue:)) ?? .metric

@@ -15,7 +15,15 @@ Build from the command line (targets the iOS Simulator; the project has no macOS
 xcodebuild -project BikeSpeed.xcodeproj -scheme BikeSpeed -destination 'platform=iOS Simulator,name=iPhone 17' -configuration Debug build
 ```
 
-There is no test target yet. For iteration, prefer opening `BikeSpeed.xcodeproj` in Xcode and using Run/Preview.
+Run the unit tests (Swift Testing; the `BikeSpeedTests` target, driven by the shared `BikeSpeed` scheme):
+```
+xcodebuild test -project BikeSpeed.xcodeproj -scheme BikeSpeed -destination 'platform=iOS Simulator,name=iPhone 17'
+```
+Tests mirror the production folder layout (`Services/TripManager.swift` → `BikeSpeedTests/Services/TripManagerTests.swift`) and are behaviour-level: they drive `TripManager` by feeding fixes into `LocationManager.acceptedLocations` through `TripTestHarness` (`BikeSpeedTests/Fixtures/`), whose `move(meters:seconds:)` reads as riding rather than as CoreLocation. Two things will otherwise look like app bugs when they're really the guards working:
+- `move(meters:)` must imply a speed under 120 km/h (33.3 m/s) or `TripManager`'s teleport guard discards the fix and no distance accrues — `move(meters: 50)` at the default one second is 180 km/h.
+- Time is injected (`TripManager(now:)`), so tests advance `TestClock` and call `tripManager.tick()` rather than sleeping. Never add a `sleep` to make a timing test pass.
+
+For iteration, prefer opening `BikeSpeed.xcodeproj` in Xcode and using Run/Preview.
 
 To manually run in the simulator:
 ```

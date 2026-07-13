@@ -74,7 +74,10 @@ extension LocationManager: CLLocationManagerDelegate {
         }
     }
 
-    private func process(_ location: CLLocation) {
+    /// Internal rather than private so tests can drive the filter directly. This is where all of the
+    /// filtering actually lives; the delegate callback above only hops onto the main actor and calls it,
+    /// so going in through the delegate would mean racing that `Task` for nothing.
+    func process(_ location: CLLocation) {
         // A cached fix reports where the phone *was*, so drop it before it can pose as a current
         // reading. Deliberately ahead of everything else and without touching `hasFix`: a stale fix
         // is not a signal-quality problem, and letting it drive the indicator would flash the state
