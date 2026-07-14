@@ -40,7 +40,7 @@ struct TripControlBar: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glass)
-                    .disabled(tripManager.state == .running)
+                    .disabled(!tripManager.canResetTrip)
                 }
                 .font(.system(size: 17, weight: .semibold))
                 .padding(.horizontal)
@@ -67,7 +67,7 @@ struct TripControlBar: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .disabled(tripManager.state == .running)
+                .disabled(!tripManager.canResetTrip)
             }
             .font(.system(size: 17, weight: .semibold))
             .padding(.horizontal)

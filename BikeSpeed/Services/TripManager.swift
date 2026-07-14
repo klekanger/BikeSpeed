@@ -129,6 +129,16 @@ final class TripManager: ObservableObject {
         state == .paused && accumulatedActiveDuration >= 5 && accumulatedDistance >= 10
     }
 
+    /// Whether `reset()` would actually clear anything — used to gate the Reset button. A trip is
+    /// resettable exactly while it is manually paused: mid-ride it must not be wiped out from under
+    /// the rider (and an auto-pause is still mid-ride), while an idle trip is already at zero, so
+    /// offering Reset there — as it did straight after a reset — is a button that does nothing when
+    /// tapped. No distance or duration floor, unlike `canSaveTrip`: clearing a false start too short
+    /// to be worth saving is precisely what Reset is for.
+    var canResetTrip: Bool {
+        state == .paused
+    }
+
     init(
         locationManager: any LocationSource,
         altimeter: any AltitudeSource,
