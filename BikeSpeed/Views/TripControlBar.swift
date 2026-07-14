@@ -107,6 +107,9 @@ struct TripControlBar: View {
     private func saveAction() {
         guard let entry = tripManager.makeLogEntry() else { return }
         tripLogStore.save(entry)
+        // Before the reset, which clears the track — and keyed to the entry that was just saved, since
+        // the route lives in its own file rather than inside the entry (see `TripLogStore`).
+        tripLogStore.saveRoute(tripManager.routeSamples, for: entry.id)
         tripManager.reset()
         isShowingSavedConfirmation = true
     }
