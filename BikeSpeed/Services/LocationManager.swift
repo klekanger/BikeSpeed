@@ -8,6 +8,14 @@ final class LocationManager: NSObject, ObservableObject {
     @Published private(set) var rawSpeed: Double = 0
     @Published private(set) var displaySpeed: Double = 0
     @Published private(set) var course: Double?
+    /// The magnetometer, smoothed circularly (see `CircularMean`). Nil where there is no magnetometer —
+    /// the Simulator — and until the first usable reading arrives.
+    @Published private(set) var heading: Double?
+    /// Whether `course` is currently being refreshed by fixes, i.e. the rider is moving fast enough for GPS
+    /// course to mean anything. This has to be its own flag: `course` is deliberately *sticky*, holding its
+    /// last value at a standstill rather than jittering, so it is never nil once set and `course ?? heading`
+    /// could never fall back to the compass.
+    @Published private(set) var isCourseLive = false
     @Published private(set) var altitude: Double?
     @Published private(set) var coordinate: CLLocationCoordinate2D?
     @Published private(set) var hasFix: Bool = false
@@ -17,7 +25,25 @@ final class LocationManager: NSObject, ObservableObject {
     /// Fixes that passed the accuracy filter, for TripManager to consume for distance accumulation.
     let acceptedLocations = PassthroughSubject<CLLocation, Never>()
 
+    /// **The direction the rider is actually travelling**, which is not the same question as either sensor
+    /// answers alone.
+    ///
+    /// While moving, that is the GPS course: it is the true direction of travel and, unlike the compass,
+    /// immune to how the phone is clamped to the bars. But course is noise below `courseSpeedThreshold`, so
+    /// it is held there rather than jittered — which leaves the arrow pointing at wherever the rider was
+    /// last heading, stale at every red light. The magnetometer fills exactly that gap: standing still, the
+    /// way the bike is *pointing* is the best available answer to which way it's about to go.
+    ///
+    /// Falls back to the last course where there is no magnetometer at all (the Simulator), which is simply
+    /// the behaviour this property replaces.
+    var travelDirection: Double? {
+        isCourseLive ? course : (heading ?? course)
+    }
+
     private let manager = CLLocationManager()
+    /// Smoothed on the unit circle, not in degrees — a plain average of 359° and 1° is due *south*. See
+    /// `CircularMean`; that is the entire reason it exists.
+    private var headingSmoother = CircularMean(smoothingFactor: 0.25)
     private let smoothingFactor = 0.35
     /// Upper bound on horizontal accuracy for the green "good" band; up to `maxHorizontalAccuracy`
     /// is the yellow "fair" band. Worse than that is red "poor" and the fix is rejected.
@@ -53,10 +79,16 @@ final class LocationManager: NSObject, ObservableObject {
 
     func startUpdating() {
         manager.startUpdatingLocation()
+        // Guarded, not assumed: there is no magnetometer in the Simulator, and calling this there would only
+        // wait for callbacks that never come. `travelDirection` degrades to course-only in that case.
+        if CLLocationManager.headingAvailable() {
+            manager.startUpdatingHeading()
+        }
     }
 
     func stopUpdating() {
         manager.stopUpdatingLocation()
+        manager.stopUpdatingHeading()
     }
 }
 
@@ -131,10 +163,12 @@ extension LocationManager: CLLocationManagerDelegate {
         displaySpeed = smoothingFactor * rawSpeed + (1 - smoothingFactor) * displaySpeed
 
         let courseIsReliable = location.course >= 0 && (location.courseAccuracy < 0 || location.courseAccuracy <= 90)
-        if courseIsReliable && rawSpeed >= courseSpeedThreshold {
+        isCourseLive = courseIsReliable && rawSpeed >= courseSpeedThreshold
+        if isCourseLive {
             course = location.course
         }
-        // else: leave `course` at its last valid value rather than snapping/jittering.
+        // else: leave `course` at its last valid value rather than snapping/jittering. `isCourseLive` is what
+        // records that it's now stale, so `travelDirection` knows to ask the compass instead.
 
         if let usableAltitude = location.usableAltitude() {
             altitude = usableAltitude
@@ -142,5 +176,42 @@ extension LocationManager: CLLocationManagerDelegate {
 
         coordinate = location.coordinate
         acceptedLocations.send(location)
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        let trueHeading = newHeading.trueHeading
+        let magneticHeading = newHeading.magneticHeading
+        let accuracy = newHeading.headingAccuracy
+        Task { @MainActor in
+            self.process(trueHeading: trueHeading, magneticHeading: magneticHeading, accuracy: accuracy)
+        }
+    }
+
+    /// **Never.** A calibration modal — "wave your phone in a figure of eight" — thrown up over the gauge on
+    /// a phone clamped to the handlebars of a moving bike is not something the rider can act on, and not
+    /// something they should be asked to. A stale arrow is a far smaller problem than a dialog mid-ride.
+    nonisolated func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool {
+        false
+    }
+
+    /// Internal, and taking plain degrees rather than the `CLHeading` the delegate got, for the same reason
+    /// `process(_:)` is: this is where the logic lives, and `CLHeading` has no public initializer — a test
+    /// could not build one to drive the delegate with.
+    func process(
+        trueHeading: CLLocationDirection,
+        magneticHeading: CLLocationDirection,
+        accuracy: CLLocationDirectionAccuracy
+    ) {
+        // Negative accuracy means the reading is unusable — CoreLocation's way of saying the magnetometer
+        // is being interfered with, which near a bike's own frame and a phone's own speaker is not rare.
+        guard accuracy >= 0 else { return }
+
+        // `trueHeading` is geographic north and is what we want — but it is *negative* until a location fix
+        // exists to resolve magnetic declination, which is precisely the moment the rider first opens the app
+        // at a standstill. Magnetic north is a few degrees off and entirely good enough to point an arrow.
+        let bearing = trueHeading >= 0 ? trueHeading : magneticHeading
+        guard bearing >= 0 else { return }
+
+        heading = headingSmoother.add(bearing)
     }
 }
