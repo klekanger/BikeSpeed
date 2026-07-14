@@ -89,13 +89,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Climb"
+            "value" : "Climb( accuracy)"
           }
         },
         "nb" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stigning"
+            "state" : "needs_review",
+            "value" : "Stigning (nøyaktighet)"
           }
         }
       }
@@ -418,13 +418,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Motion & Fitness is off, so climb is measured by GPS. Turn it on for more accurate climb readings."
+            "value" : "Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bevegelse og trening er slått av, så stigning måles med GPS. Slå det på for mer nøyaktig måling av stigning."
+            "value" : "Bevegelse og trening er slått av, så stigning måles med GPS i stedet for barometer. Slå det på for mer nøyaktig måling av stigning."
           }
         }
       }
@@ -801,22 +801,6 @@
         }
       }
     },
-    "Trip" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trip"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tur"
-          }
-        }
-      }
-    },
     "Total ascent" : {
       "localizations" : {
         "en" : {
@@ -845,6 +829,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Total nedstigning"
+          }
+        }
+      }
+    },
+    "Trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tur"
           }
         }
       }

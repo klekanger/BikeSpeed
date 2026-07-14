@@ -46,22 +46,6 @@ struct SettingsView: View {
                     Text("Pauses distance and time automatically when you stop.")
                 }
 
-                // Only after an actual denial on barometer hardware — the prompt itself can never
-                // be re-shown, so the Settings toggle is the one way back (see the predicate's doc).
-                if AltimeterManager.needsMotionPermissionHint() {
-                    Section {
-                        Button("Open Settings") {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                openURL(url)
-                            }
-                        }
-                    } header: {
-                        Text("Climb")
-                    } footer: {
-                        Text("Motion & Fitness is off, so climb is measured by GPS. Turn it on for more accurate climb readings.")
-                    }
-                }
-
                 Section("Gauge") {
                     Stepper(
                         value: maxGaugeSpeedBinding,
@@ -91,22 +75,42 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-               VStack(spacing: 4) {
-                   HStack(spacing: 4) {
-                       Text(verbatim: "BikeSpeed")
-                           .foregroundStyle(.primary)
-                       Text(verbatim: "v\(appVersion)")
-                           .foregroundStyle(.primary)
-                   }
-                   Text(verbatim: "Lekanger tekst og kode 2026")
-                   Text(verbatim: "MIT License")
-               }
-               .font(.footnote)
-               .foregroundStyle(.secondary)
-               .frame(maxWidth: .infinity)
-               .padding(.bottom, 24)
+                
+                // Only after an actual denial on barometer hardware — the prompt itself can never
+                // be re-shown, so the Settings toggle is the one way back (see the predicate's doc).
+                if AltimeterManager.needsMotionPermissionHint() {
+                    Section {
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        }
+                    } header: {
+                        Text("Climb")
+                    } footer: {
+                        Text("Motion & Fitness is off, so climb is measured by GPS. Turn it on for more accurate climb readings.")
+                            .foregroundStyle(Color.red)
+                    }
+                }
+
+                // Scrolls with the content rather than sitting in a safe-area inset, so it can
+                // never overlap the last section however many sections are shown above it.
+                Section {
+                } footer: {
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Text(verbatim: "BikeSpeed")
+                            Text(verbatim: "v\(appVersion)")
+                        }
+                        .foregroundStyle(.primary)
+                        Text(verbatim: "Lekanger tekst og kode 2026")
+                        Text(verbatim: "MIT License")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
+                }
             }
            .navigationTitle(settings.appLanguage.localizedString(forKey: "Settings"))
            .toolbar {
