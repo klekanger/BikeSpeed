@@ -1,4 +1,3 @@
-import Combine
 import CoreMotion
 
 /// Provides the barometer's relative altitude for the trip's ascent/descent accumulation.
@@ -10,11 +9,12 @@ import CoreMotion
 /// Unlike `MotionManager`'s device-motion, `CMAltimeter` requires `NSMotionUsageDescription` — the
 /// system prompts when updates first start, which is why they start with the first trip (see
 /// `AltitudeSource`) rather than in `init`.
+/// Deliberately **not** `@Observable`, and not in the environment. No view reads a barometer reading —
+/// `TripManager` samples it synchronously at each accepted fix — so there is nothing to observe, and
+/// making it observable would only invite a body somewhere to read `relativeAltitude` and re-evaluate
+/// itself once a second for the whole time the barometer runs.
 @MainActor
-final class AltimeterManager: ObservableObject, AltitudeSource {
-    /// Deliberately not `@Published`: nothing subscribes — `TripManager` samples it synchronously at
-    /// each accepted fix — and a published write here would re-evaluate the app's scene body once a
-    /// second for the whole time the barometer runs.
+final class AltimeterManager: AltitudeSource {
     private(set) var relativeAltitude: Double?
 
     /// Starts as "does the hardware exist" and drops to false the first time an update errors —

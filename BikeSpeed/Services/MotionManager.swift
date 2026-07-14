@@ -1,6 +1,6 @@
-import Combine
 import CoreGraphics
 import CoreMotion
+import Observation
 
 /// Publishes a smoothed gravity-direction vector used purely as a cosmetic input to shift the
 /// gauge's metallic gradients as the phone is tilted, so the bezel/face look like they catch a
@@ -12,8 +12,9 @@ import CoreMotion
 /// (light smoothing) without jittering. `tilt.width`/`tilt.height` are gravity's x/y, each roughly
 /// in -1...1; at rest in portrait that's about (0, -1).
 @MainActor
-final class MotionManager: ObservableObject {
-    @Published private(set) var tilt: CGSize = .zero
+@Observable
+final class MotionManager {
+    private(set) var tilt: CGSize = .zero
 
     private let manager = CMMotionManager()
     private let updateInterval = 1.0 / 20.0
@@ -21,10 +22,13 @@ final class MotionManager: ObservableObject {
     /// needs to take the edge off, not hide vibration.
     private let smoothingFactor = 0.18
     /// Don't republish (and thus redraw the gauge Canvas) when the phone is essentially still —
-    /// only push a new value once the smoothed tilt has actually drifted a little.
+    /// only push a new value once the smoothed tilt has actually drifted a little. Still needed under
+    /// `@Observable`: Observation fires on any write, identical or not — it does not diff.
     private let publishThreshold = 0.004
-    private var smoothedX: Double = 0
-    private var smoothedY: Double = 0
+    /// The running filter state, not something anyone draws — tracking it would wake observers 20×/s
+    /// for a value no view reads.
+    @ObservationIgnored private var smoothedX: Double = 0
+    @ObservationIgnored private var smoothedY: Double = 0
 
     init() {
         guard manager.isDeviceMotionAvailable else { return }

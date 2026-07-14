@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var settings: SettingsStore
+    /// `@Bindable`, not `@Environment`: the settings sheet is the one place that *writes* the store, and
+    /// this is what keeps the `$settings.autoPauseEnabled` bindings below working verbatim.
+    @Bindable var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL

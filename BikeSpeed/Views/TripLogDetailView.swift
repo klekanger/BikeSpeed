@@ -7,8 +7,8 @@ import SwiftUI
 struct TripLogDetailView: View {
     let entry: TripLogEntry
 
-    @EnvironmentObject private var settingsStore: SettingsStore
-    @EnvironmentObject private var tripLogStore: TripLogStore
+    @Environment(SettingsStore.self) private var settingsStore
+    @Environment(TripLogStore.self) private var tripLogStore
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
@@ -201,7 +201,7 @@ struct TripLogDetailView: View {
             totalAscent: 312,
             totalDescent: 296
         ))
-        .environmentObject(SettingsStore())
-        .environmentObject(TripLogStore())
+        .environment(SettingsStore())
+        .environment(TripLogStore())
     }
 }

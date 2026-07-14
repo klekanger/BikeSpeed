@@ -444,6 +444,10 @@ struct TripManagerTests {
         try #require(harness.trip.isAutoPaused)
 
         harness.settings.autoPauseEnabled = false
+        // The release now happens on the trip clock rather than instantly off a Combine sink, because an
+        // auto-paused rider is standing still and there may be no next fix to notice the toggle at. The
+        // rider sees it within 0.5 s; the test drives the same tick directly rather than waiting for it.
+        harness.trip.tick()
 
         #expect(harness.trip.isAutoPaused == false)
     }

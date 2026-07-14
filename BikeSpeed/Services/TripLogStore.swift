@@ -1,5 +1,5 @@
-import Combine
 import Foundation
+import Observation
 
 /// Persists completed trips as a single JSON array in Application Support (not Documents — the
 /// app has no file-sharing entitlement, and Application Support is the idiomatic home for
@@ -13,16 +13,17 @@ import Foundation
 /// list view, which needs none of it, would decode the lot on launch. A route is read only when a single
 /// trip's detail is opened, which is exactly when its own file is cheap to load.
 @MainActor
-final class TripLogStore: ObservableObject {
-    @Published private(set) var entries: [TripLogEntry] = []
+@Observable
+final class TripLogStore {
+    private(set) var entries: [TripLogEntry] = []
 
     /// Deliberately `nonisolated` and public to the module: this is how `TripLogDetailView` reads a track
     /// off the main actor, which reading it *through* this `@MainActor` class could never be.
-    nonisolated let routes: RouteFileStore
+    @ObservationIgnored nonisolated let routes: RouteFileStore
 
-    private let fileURL: URL
-    private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
+    @ObservationIgnored private let fileURL: URL
+    @ObservationIgnored private let encoder = JSONEncoder()
+    @ObservationIgnored private let decoder = JSONDecoder()
 
     init(fileURL: URL? = nil) {
         let logURL = fileURL ?? Self.defaultFileURL()

@@ -1,30 +1,32 @@
-import CoreLocation
 import Combine
+import CoreLocation
 import Foundation
+import Observation
 
 /// Owns the Start/Pause/Reset trip state machine and the distance/average-speed accumulation
 /// derived from accepted location fixes. Elapsed active time is wall-clock based so it stays
 /// correct across app backgrounding.
 @MainActor
-final class TripManager: ObservableObject {
-    @Published private(set) var state: TripState = .idle
-    @Published private(set) var accumulatedDistance: CLLocationDistance = 0 // meters
-    @Published private(set) var elapsedActiveDuration: TimeInterval = 0
-    @Published private(set) var maxSpeed: CLLocationSpeed = 0 // m/s, top instantaneous speed seen while running
+@Observable
+final class TripManager {
+    private(set) var state: TripState = .idle
+    private(set) var accumulatedDistance: CLLocationDistance = 0 // meters
+    private(set) var elapsedActiveDuration: TimeInterval = 0
+    private(set) var maxSpeed: CLLocationSpeed = 0 // m/s, top instantaneous speed seen while running
 
     /// Nil until any usable altitude has been sampled: "no data" must stay distinguishable from "a
     /// flat ride" in the live UI just as it is in the saved log (see `TripLogEntry`).
-    @Published private(set) var totalAscent: CLLocationDistance? // meters
-    @Published private(set) var totalDescent: CLLocationDistance? // meters, positive
+    private(set) var totalAscent: CLLocationDistance? // meters
+    private(set) var totalDescent: CLLocationDistance? // meters, positive
     /// Rise over a trailing ~30 m of run — e.g. 0.05 for a 5 % climb. Nil until enough of the trip
     /// has been ridden to measure one honestly; see `GradeCalculator`.
-    @Published private(set) var currentGrade: Double?
+    private(set) var currentGrade: Double?
 
     /// Whether a running trip has stopped accumulating because the rider is standing still. This is
     /// deliberately a flag on `.running` rather than a `TripState` case: a manual pause must stay
     /// distinguishable from an auto-pause (otherwise rolling forward would resume a trip the user
     /// paused on purpose), and `canSaveTrip` must not offer to save at every red light.
-    @Published private(set) var isAutoPaused = false
+    private(set) var isAutoPaused = false
 
     private var accumulatedActiveDuration: TimeInterval = 0
     private var activeStart: Date?
@@ -34,17 +36,17 @@ final class TripManager: ObservableObject {
     /// An auto-pause deliberately does *not* release them: its only exit is a fix above the resume
     /// threshold, which can never arrive under a locked screen once GPS has been let go.
     private let locationSource: any LocationSource
-    private var cancellable: AnyCancellable?
+    @ObservationIgnored private var cancellable: AnyCancellable?
     /// The wall clock, injected. Everything here that asks "what time is it now" — as opposed to
     /// reading a fix's own `timestamp` — goes through this, so a test can drive elapsed time and the
     /// auto-pause watchdog without sleeping.
     private let now: @MainActor () -> Date
-    /// Held strongly: subscribing to `settings.$autoPauseEnabled` retains only the publisher's
-    /// subject, not the store, so without this the toggle would go silently inert wherever the
-    /// caller doesn't happen to keep the store alive itself.
+    /// Read directly wherever auto-pause is decided, rather than mirrored into a local flag off a
+    /// subscription. Under `@Observable` there is no `$autoPauseEnabled` publisher to sink, and there
+    /// no longer needs to be: a plain read always sees the current value, which is what the mirror was
+    /// only ever approximating. See `tick()` for the one case a read alone doesn't cover.
     private let settings: SettingsStore
-    private var settingsCancellable: AnyCancellable?
-    private var tickTimer: Timer?
+    @ObservationIgnored private var tickTimer: Timer?
 
     /// Set once in `start()` and never touched by `resume()`, unlike `activeStart` — this is the
     /// stable wall-clock start time saved into a `TripLogEntry`.
@@ -56,9 +58,10 @@ final class TripManager: ObservableObject {
     /// The trip's recorded track, for the detail map and the GPX export. Decimated by distance like
     /// `altitudeSamples`, but far more finely: the height profile only needs its shape, whereas a
     /// track sampled every 25 m visibly cuts corners on a map and exports as a ride nobody rode.
-    /// Not `@Published` — nothing draws it live, and republishing a growing array every few seconds
-    /// would invalidate the gauge for no one's benefit. `TripControlBar` reads it once, at Save.
-    private(set) var routeSamples: [RouteSample] = []
+    /// `@ObservationIgnored` — nothing draws it live, and waking observers for a growing array every
+    /// few seconds would invalidate the gauge for no one's benefit. `TripControlBar` reads it once,
+    /// at Save, which is not a body read and so needs no tracking.
+    @ObservationIgnored private(set) var routeSamples: [RouteSample] = []
     private var lastRouteSampleDistance: CLLocationDistance = 0
     private let routeSampleDistanceInterval: CLLocationDistance = 10 // meters
 
@@ -124,7 +127,6 @@ final class TripManager: ObservableObject {
     private let autoPauseFixTimeout: TimeInterval = 5
     private var belowThresholdSince: Date?
     private var lastAcceptedFix: Date?
-    private var autoPauseEnabled = true
 
     var averageSpeed: Double { // m/s
         let duration = currentElapsedActiveDuration()
@@ -158,13 +160,6 @@ final class TripManager: ObservableObject {
         self.altimeter = altimeter
         self.settings = settings
         self.now = now
-        autoPauseEnabled = settings.autoPauseEnabled
-        // `@Published` fires from `willSet`, so the new value only arrives as the sink's argument —
-        // re-reading `settings.autoPauseEnabled` here would still see the old one.
-        settingsCancellable = settings.$autoPauseEnabled.sink { [weak self] enabled in
-            self?.autoPauseEnabled = enabled
-            if !enabled { self?.clearAutoPause() }
-        }
         cancellable = locationManager.acceptedLocations.sink { [weak self] location in
             self?.consume(location)
         }
@@ -181,6 +176,12 @@ final class TripManager: ObservableObject {
     /// and republish elapsed time so a running trip's duration ticks up between fixes. Split out of the
     /// timer so it can be driven directly rather than waited on.
     func tick() {
+        // Switching auto-pause off must release one that is already active, and the trip clock is the
+        // only place that can see it happen. `updateAutoPause(for:)` reads the setting too, but it runs
+        // on accepted fixes — and a rider who is auto-paused is, by definition, standing still, so there
+        // may be no next fix to notice the change at. This is the job the old `settings.$autoPauseEnabled`
+        // sink did; at 0.5 s, a toggle flipped in a sheet still feels instant.
+        if !settings.autoPauseEnabled { clearAutoPause() }
         releaseAutoPauseIfUnconfirmed()
         guard activeStart != nil else { return }
         elapsedActiveDuration = currentElapsedActiveDuration()
@@ -332,7 +333,7 @@ final class TripManager: ObservableObject {
     /// `maxFixAge`: a cached fix carrying a timestamp minutes in the past would otherwise satisfy
     /// `autoPauseDelay` on its own and pause a moving rider instantly, debounce and all.
     private func updateAutoPause(for location: CLLocation) {
-        guard autoPauseEnabled else {
+        guard settings.autoPauseEnabled else {
             clearAutoPause()
             return
         }
