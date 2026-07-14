@@ -21,6 +21,14 @@ struct TripLogDetailView: View {
                 LabeledContent("Distance", value: settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale))
                 LabeledContent("Average speed", value: settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.averageSpeed, locale: locale))
                 LabeledContent("Max speed", value: settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.maxSpeed, locale: locale))
+                // Absent, not zero, on trips recorded without altitude data (including anything
+                // saved before v2) — a row reading "0 m" would claim the ride was flat.
+                if let totalAscent = entry.totalAscent {
+                    LabeledContent("Total ascent", value: settingsStore.measurementSystem.formattedAltitude(meters: totalAscent, locale: locale))
+                }
+                if let totalDescent = entry.totalDescent {
+                    LabeledContent("Total descent", value: settingsStore.measurementSystem.formattedAltitude(meters: totalDescent, locale: locale))
+                }
             }
 
             Section("Height profile") {
@@ -81,7 +89,9 @@ struct TripLogDetailView: View {
             maxSpeed: 11.4,
             altitudeProfile: stride(from: 0.0, through: 12_400.0, by: 200.0).map {
                 AltitudeSample(distance: $0, altitude: 100 + 30 * sin($0 / 1000))
-            }
+            },
+            totalAscent: 312,
+            totalDescent: 296
         ))
         .environmentObject(SettingsStore())
         .environmentObject(TripLogStore())

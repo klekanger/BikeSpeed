@@ -37,6 +37,8 @@ struct ContentView: View {
                         maxSpeed: tripManager.maxSpeed,
                         distance: tripManager.accumulatedDistance,
                         duration: tripManager.elapsedActiveDuration,
+                        totalAscent: tripManager.totalAscent,
+                        grade: tripManager.currentGrade,
                         isAutoPaused: tripManager.isAutoPaused
                     ),
                     location: LocationReadout(
@@ -112,7 +114,7 @@ struct ContentView: View {
         .environmentObject(locationManager)
         .environmentObject(AddressLookupManager(locationManager: locationManager))
         .environmentObject(settingsStore)
-        .environmentObject(TripManager(locationManager: locationManager, settings: settingsStore))
+        .environmentObject(TripManager(locationManager: locationManager, altimeter: AltimeterManager(), settings: settingsStore))
         .environmentObject(MotionManager())
         .environmentObject(TripLogStore())
 }

@@ -13,15 +13,18 @@ struct BikeSpeedApp: App {
     @StateObject private var addressLookupManager: AddressLookupManager
     @StateObject private var settingsStore: SettingsStore
     @StateObject private var tripManager: TripManager
+    @StateObject private var altimeterManager: AltimeterManager
     @StateObject private var motionManager = MotionManager()
     @StateObject private var tripLogStore = TripLogStore()
 
     init() {
         let locationManager = LocationManager()
         let settingsStore = SettingsStore()
+        let altimeterManager = AltimeterManager()
         _locationManager = StateObject(wrappedValue: locationManager)
         _settingsStore = StateObject(wrappedValue: settingsStore)
-        _tripManager = StateObject(wrappedValue: TripManager(locationManager: locationManager, settings: settingsStore))
+        _altimeterManager = StateObject(wrappedValue: altimeterManager)
+        _tripManager = StateObject(wrappedValue: TripManager(locationManager: locationManager, altimeter: altimeterManager, settings: settingsStore))
         _addressLookupManager = StateObject(wrappedValue: AddressLookupManager(locationManager: locationManager))
     }
 
