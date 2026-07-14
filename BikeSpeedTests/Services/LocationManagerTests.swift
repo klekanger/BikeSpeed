@@ -200,4 +200,82 @@ struct LocationManagerTests {
 
         #expect(manager.altitude == 150)
     }
+
+    // MARK: - Travel direction
+
+    /// Moving, the GPS course is the answer: it is the true direction of *travel*, and unlike the compass it
+    /// doesn't care which way the phone is clamped to the bars.
+    @Test
+    func travelDirectionIsTheGPSCourseWhileMoving() throws {
+        let manager = LocationManager()
+        manager.process(trueHeading: 270, magneticHeading: 270, accuracy: 5)
+
+        manager.process(makeFix(course: 90, speed: 8, timestamp: Date()))
+
+        expectClose(try #require(manager.travelDirection), 90, within: 0.01)
+        #expect(manager.isCourseLive)
+    }
+
+    /// **The feature.** Below the course threshold GPS course is noise, so it is held at its last value —
+    /// which leaves the arrow pointing wherever the rider was last heading, stale at every red light. The
+    /// magnetometer is the only thing that can still answer, so at a standstill it takes over.
+    @Test(.tags(.edgeCase))
+    func travelDirectionHandsOverToTheCompassAtAStandstill() throws {
+        let manager = LocationManager()
+        manager.process(makeFix(course: 90, speed: 8, timestamp: Date())) // riding east
+        manager.process(trueHeading: 270, magneticHeading: 270, accuracy: 5) // phone says west
+
+        // Stopped at the lights. Speed inside the standstill deadband, so `rawSpeed` is zeroed.
+        manager.process(makeFix(course: 90, speed: 0.1, timestamp: Date()))
+
+        #expect(manager.isCourseLive == false)
+        expectClose(try #require(manager.course), 90, within: 0.01, "course itself is still sticky — that's its job")
+        expectClose(try #require(manager.travelDirection), 270, within: 1, "but the direction shown is now the compass")
+    }
+
+    /// The Simulator has no magnetometer, so no heading ever arrives. `travelDirection` then has to degrade
+    /// to exactly the behaviour it replaced — the last known course — rather than going nil and blanking the
+    /// direction cell the moment the rider stops.
+    @Test(.tags(.edgeCase))
+    func travelDirectionFallsBackToTheLastCourseWhenThereIsNoCompass() throws {
+        let manager = LocationManager()
+        manager.process(makeFix(course: 90, speed: 8, timestamp: Date()))
+
+        manager.process(makeFix(course: 90, speed: 0.1, timestamp: Date()))
+
+        #expect(manager.heading == nil, "no heading was ever delivered")
+        #expect(manager.isCourseLive == false)
+        expectClose(try #require(manager.travelDirection), 90, within: 0.01)
+    }
+
+    /// Nothing has been measured yet, so there is nothing to point at — and the direction cell shows its
+    /// placeholder rather than an arrow aimed confidently at north.
+    @Test
+    func travelDirectionIsUnknownBeforeAnySensorHasReported() {
+        #expect(LocationManager().travelDirection == nil)
+    }
+
+    /// A negative `headingAccuracy` is CoreLocation's "this reading is meaningless" sentinel — the
+    /// magnetometer being interfered with, which beside a bike frame and a phone speaker is not rare.
+    @Test(.tags(.edgeCase))
+    func aHeadingWithInvalidAccuracyIsIgnored() throws {
+        let manager = LocationManager()
+        manager.process(trueHeading: 90, magneticHeading: 90, accuracy: 5)
+
+        manager.process(trueHeading: 200, magneticHeading: 200, accuracy: -1)
+
+        expectClose(try #require(manager.heading), 90, within: 1, "the bad reading must not move the arrow")
+    }
+
+    /// `trueHeading` is negative until a location fix exists to resolve magnetic declination — which is
+    /// exactly the moment the rider first opens the app, standing still, before any fix has landed. Magnetic
+    /// north is a few degrees off and entirely good enough to point an arrow with.
+    @Test(.tags(.edgeCase))
+    func magneticHeadingIsUsedUntilTrueHeadingIsAvailable() throws {
+        let manager = LocationManager()
+
+        manager.process(trueHeading: -1, magneticHeading: 135, accuracy: 5)
+
+        expectClose(try #require(manager.heading), 135, within: 1)
+    }
 }

@@ -44,7 +44,9 @@ struct ContentView: View {
                     location: LocationReadout(
                         altitude: locationManager.altitude,
                         coordinate: locationManager.coordinate,
-                        course: locationManager.course,
+                        // Not `course`: that one goes stale the moment the rider stops, and the arrow with
+                        // it. `travelDirection` hands over to the compass at a standstill — see `LocationManager`.
+                        course: locationManager.travelDirection,
                         streetName: addressLookupManager.streetName
                     ),
                     measurementSystem: settingsStore.measurementSystem,
