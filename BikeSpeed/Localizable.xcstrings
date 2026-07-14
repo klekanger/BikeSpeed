@@ -268,6 +268,22 @@
         }
       }
     },
+    "Export GPX" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export GPX"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksporter GPX"
+          }
+        }
+      }
+    },
     "Fair" : {
       "comment" : "VoiceOver value for a marginal GPS signal.",
       "localizations" : {
@@ -281,6 +297,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Middels"
+          }
+        }
+      }
+    },
+    "Finish" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mål"
           }
         }
       }
@@ -646,6 +678,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fortsett"
+          }
+        }
+      }
+    },
+    "Route" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rute"
           }
         }
       }

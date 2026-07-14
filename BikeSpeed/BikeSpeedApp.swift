@@ -26,6 +26,11 @@ struct BikeSpeedApp: App {
         _altimeterManager = StateObject(wrappedValue: altimeterManager)
         _tripManager = StateObject(wrappedValue: TripManager(locationManager: locationManager, altimeter: altimeterManager, settings: settingsStore))
         _addressLookupManager = StateObject(wrappedValue: AddressLookupManager(locationManager: locationManager))
+
+        // Every trip detail view opened last session left a `.gpx` in `tmp/`, and iOS only reaps that
+        // directory under storage pressure. Launch is the one moment no share sheet can still be reading
+        // one, so it's the safe place to clear them.
+        GPXExporter.clearExports()
     }
 
     var body: some Scene {

@@ -1,3 +1,4 @@
+import CoreLocation
 import Testing
 
 @testable import BikeSpeed
@@ -987,6 +988,115 @@ struct TripManagerTests {
         expectClose(entry.distance, 100)
         expectClose(entry.duration, 10, within: 0.01)
         expectClose(entry.averageSpeed, 10, within: 0.1)
+    }
+
+    // MARK: - Route capture
+
+    /// The track hangs off `consume(_:)` like everything else, so it inherits the trip-state gating — a
+    /// phone sitting on a table before the ride must not record a track.
+    @Test
+    func noRouteIsRecordedBeforeTheTripStarts() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.move(meters: 8)
+        harness.move(meters: 8)
+
+        #expect(harness.trip.routeSamples.isEmpty)
+    }
+
+    /// The rider sets off from where they set off — not from 10 m down the road. A trip started while the
+    /// app was already tracking has an anchor from before `start()`, so its first *running* fix has to be
+    /// captured even though no distance has accrued against the sampling interval yet.
+    @Test
+    func theTrackBeginsAtTheFirstFixAfterStart() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 5)
+
+        #expect(harness.trip.routeSamples.count == 1)
+        let start = try #require(harness.trip.routeSamples.first)
+        expectClose(start.latitude, Fix.north(of: Fix.oslo, meters: 5).latitude, within: 0.000_01)
+    }
+
+    /// Fixes arrive about once a second; a track that kept every one of them would be a few thousand points
+    /// for an hour's ride, most of them a metre apart. Decimating by distance keeps the shape and drops the
+    /// rest — 100 m at a 10 m interval is ~10 points, not the 20 fixes that produced them.
+    @Test
+    func theTrackIsDecimatedByDistanceRatherThanKeepingEveryFix() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        for _ in 0..<20 {
+            harness.move(meters: 5) // 20 fixes, 100 m
+        }
+
+        expectClose(harness.trip.accumulatedDistance, 100)
+        #expect((9...12).contains(harness.trip.routeSamples.count), "expected ~10 samples, got \(harness.trip.routeSamples.count)")
+    }
+
+    @Test
+    func routeSamplesCarryTheAltitudeAndTimeOfTheirFix() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 5, altitude: 137)
+
+        let sample = try #require(harness.trip.routeSamples.first)
+        expectClose(try #require(sample.altitude), 137, within: 0.01)
+        #expect(sample.timestamp == harness.clock.now)
+    }
+
+    /// GPX has no way to say "the height here is unknown", so a fix whose vertical accuracy is unusable
+    /// contributes a point with no altitude rather than one claiming sea level. The point itself is still
+    /// worth having: the rider was there, and the map only needs the coordinate.
+    @Test(.tags(.edgeCase))
+    func aFixWithoutUsableAltitudeStillRecordsItsPosition() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 5, verticalAccuracy: -1) // CoreLocation's "no altitude" sentinel
+
+        let sample = try #require(harness.trip.routeSamples.first)
+        #expect(sample.altitude == nil)
+        expectClose(sample.longitude, Fix.oslo.longitude, within: 0.000_01)
+    }
+
+    /// Standing at a red light for two minutes must not bank 120 identical points — and it doesn't, because
+    /// an auto-paused trip stops at the same guard that stops distance.
+    @Test
+    func anAutoPausedTripRecordsNoFurtherTrack() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 20, seconds: 2)
+        autoPause(harness)
+        let atPause = harness.trip.routeSamples.count
+
+        for _ in 0..<10 {
+            harness.move(meters: 0.1, speed: 0.3)
+        }
+
+        #expect(harness.trip.routeSamples.count == atPause)
+    }
+
+    @Test
+    func resetClearsTheTrack() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        for _ in 0..<10 {
+            harness.move(meters: 5)
+        }
+        harness.trip.pause()
+
+        harness.trip.reset()
+
+        #expect(harness.trip.routeSamples.isEmpty)
     }
 
     // MARK: - Helpers

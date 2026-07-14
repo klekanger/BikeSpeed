@@ -53,6 +53,15 @@ final class TripManager: ObservableObject {
     private var lastAltitudeSampleDistance: CLLocationDistance = 0
     private let altitudeSampleDistanceInterval: CLLocationDistance = 25 // meters
 
+    /// The trip's recorded track, for the detail map and the GPX export. Decimated by distance like
+    /// `altitudeSamples`, but far more finely: the height profile only needs its shape, whereas a
+    /// track sampled every 25 m visibly cuts corners on a map and exports as a ride nobody rode.
+    /// Not `@Published` — nothing draws it live, and republishing a growing array every few seconds
+    /// would invalidate the gauge for no one's benefit. `TripControlBar` reads it once, at Save.
+    private(set) var routeSamples: [RouteSample] = []
+    private var lastRouteSampleDistance: CLLocationDistance = 0
+    private let routeSampleDistanceInterval: CLLocationDistance = 10 // meters
+
     /// The barometer. Ascent/descent and grade are *sampled* from it at each accepted fix that
     /// advanced the trip's distance, rather than accumulated on a subscription of its own, so they
     /// inherit `consume(_:)`'s running and auto-pause gating for free — and a standstill, where
@@ -227,6 +236,8 @@ final class TripManager: ObservableObject {
         lastAcceptedFix = nil
         altitudeSamples.removeAll()
         lastAltitudeSampleDistance = 0
+        routeSamples.removeAll()
+        lastRouteSampleDistance = 0
         elevation.reset()
         grade.reset()
         totalAscent = nil
@@ -380,6 +391,7 @@ final class TripManager: ObservableObject {
             if let altitude = location.usableAltitude(within: Self.maxAltitudeVerticalAccuracy) {
                 altitudeSamples.append(AltitudeSample(distance: 0, altitude: altitude))
             }
+            appendRouteSample(from: location)
             sampleElevation(from: location)
             return
         }
@@ -412,6 +424,14 @@ final class TripManager: ObservableObject {
             lastAltitudeSampleDistance = accumulatedDistance
         }
 
+        // `routeSamples.isEmpty` is not redundant with the first-fix branch above: a trip started while
+        // the app was already tracking has an anchor from before `start()`, so its first *running* fix
+        // comes through here — and without this the track would begin 10 m into the ride, putting the
+        // start marker down the road from where the rider actually set off.
+        if routeSamples.isEmpty || accumulatedDistance - lastRouteSampleDistance >= routeSampleDistanceInterval {
+            appendRouteSample(from: location)
+        }
+
         // Only a fix that moved the trip feeds elevation: the jitter floor freezes distance at a
         // standstill, and this is the same protection for climb — GPS altitude wander and barometric
         // drift at a red light must not accumulate, and auto-pause alone can't guarantee that
@@ -419,6 +439,19 @@ final class TripManager: ObservableObject {
         if advanced {
             sampleElevation(from: location)
         }
+    }
+
+    /// Records where the rider is, for the track. Unlike the elevation sampling below, this takes the
+    /// fix whether or not it carried a usable altitude: a point with no height is still a point on the
+    /// map, and GPX just omits its `<ele>`.
+    private func appendRouteSample(from location: CLLocation) {
+        routeSamples.append(RouteSample(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            altitude: location.usableAltitude(within: Self.maxAltitudeVerticalAccuracy),
+            timestamp: location.timestamp
+        ))
+        lastRouteSampleDistance = accumulatedDistance
     }
 
     /// Reads the trip's altitude source — committed by `latchElevationSource(for:)` at the first
