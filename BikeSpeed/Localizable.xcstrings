@@ -68,6 +68,22 @@
         }
       }
     },
+    "Biggest climb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biggest climb"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Største stigning"
+          }
+        }
+      }
+    },
     "Cancel" : {
       "localizations" : {
         "en" : {
@@ -301,6 +317,22 @@
         }
       }
     },
+    "Fastest average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fastest average"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Høyeste snittfart"
+          }
+        }
+      }
+    },
     "Finish" : {
       "localizations" : {
         "en" : {
@@ -427,6 +459,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Logger"
+          }
+        }
+      }
+    },
+    "Longest ride" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longest ride"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lengste tur"
           }
         }
       }
@@ -617,6 +665,22 @@
         }
       }
     },
+    "Personal bests" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal bests"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personlige rekorder"
+          }
+        }
+      }
+    },
     "Poor" : {
       "comment" : "VoiceOver value for a weak GPS signal.",
       "localizations" : {
@@ -678,6 +742,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fortsett"
+          }
+        }
+      }
+    },
+    "Rides" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rides"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turer"
           }
         }
       }
@@ -867,6 +947,54 @@
         }
       }
     },
+    "This month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This month"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne måneden"
+          }
+        }
+      }
+    },
+    "This week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne uken"
+          }
+        }
+      }
+    },
+    "Top speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top speed"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toppfart"
+          }
+        }
+      }
+    },
     "Total ascent" : {
       "localizations" : {
         "en" : {
@@ -895,6 +1023,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Total nedstigning"
+          }
+        }
+      }
+    },
+    "Total distance" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total distance"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total distanse"
+          }
+        }
+      }
+    },
+    "Total time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total time"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total tid"
+          }
+        }
+      }
+    },
+    "Totals" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totals"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totalt"
           }
         }
       }
