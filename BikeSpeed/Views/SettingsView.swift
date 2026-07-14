@@ -86,9 +86,10 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        Text("Climb")
+                        // Deliberately not the bare "Climb" key — the stats cell's climb page shares it.
+                        Text("Climb (accuracy)")
                     } footer: {
-                        Text("Motion & Fitness is off, so climb is measured by GPS. Turn it on for more accurate climb readings.")
+                        Text("Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings.")
                             .foregroundStyle(Color.red)
                     }
                 }
