@@ -61,6 +61,71 @@ struct TripManagerTests {
         expectClose(harness.trip.accumulatedDistance, 50)
     }
 
+    // MARK: - Reset availability
+
+    @Test
+    func aTripThatWasNeverStartedHasNothingToReset() {
+        let harness = TripTestHarness()
+        #expect(harness.trip.canResetTrip == false)
+    }
+
+    /// The bug this pins: after Reset the trip is back at zero, so the button had nothing left to do —
+    /// yet it stayed enabled, inviting a tap that visibly changes nothing.
+    @Test
+    func resettingATripLeavesNothingLeftToReset() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 50, seconds: 5)
+        harness.trip.pause()
+
+        #expect(harness.trip.canResetTrip)
+
+        harness.trip.reset()
+
+        #expect(harness.trip.canResetTrip == false)
+    }
+
+    /// Same rule the `reset()` guard already enforces: a running trip must not be wiped out from under
+    /// the rider — pause it first.
+    @Test
+    func aRunningTripCannotBeReset() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 50, seconds: 5)
+
+        #expect(harness.trip.canResetTrip == false)
+    }
+
+    /// An auto-pause is a flag on `.running`, so it must not unlock Reset at a red light any more than
+    /// it unlocks Save.
+    @Test(.tags(.edgeCase))
+    func anAutoPausedTripCannotBeReset() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 100, seconds: 10)
+        autoPause(harness)
+
+        #expect(harness.trip.isAutoPaused)
+        #expect(harness.trip.canResetTrip == false)
+    }
+
+    /// Reset stays available for a trip too short to save — clearing a false start is exactly what it's
+    /// for, and it must not inherit `canSaveTrip`'s distance and duration floors.
+    @Test
+    func aPausedTripTooSmallToSaveCanStillBeReset() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+        harness.move(meters: 5, seconds: 2)
+        harness.trip.pause()
+
+        #expect(harness.trip.canSaveTrip == false)
+        #expect(harness.trip.canResetTrip)
+    }
+
     // MARK: - Distance
 
     @Test
