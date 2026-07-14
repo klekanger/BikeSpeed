@@ -159,8 +159,10 @@ final class TripManager: ObservableObject {
         cancellable = locationManager.acceptedLocations.sink { [weak self] location in
             self?.consume(location)
         }
+        // The timer is scheduled from the main actor, so its block fires on the main run loop;
+        // asserting that isolation keeps `tick()` synchronous instead of hopping through a `Task`.
         tickTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.tick()
             }
         }
