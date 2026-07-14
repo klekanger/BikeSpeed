@@ -1,28 +1,41 @@
 import Charts
 import MapKit
+import SwiftData
 import SwiftUI
 
 /// Full detail for a single saved trip: date, duration, distance, average/max speed, the recorded
 /// track on a map, and a height-profile chart plotted against accumulated distance.
 struct TripLogDetailView: View {
+    /// The row, used only to load the payloads and to delete it. **Never read in `body`** — see `entry`.
+    let trip: StoredTrip
+
+    /// The scalars, snapshotted as a value by the caller. The body reads *this*, not `trip`.
+    ///
+    /// Deleting a trip from here invalidates the `StoredTrip` the moment the context saves, while this view is
+    /// still mounted through the pop animation — and a body that observed the model would be re-evaluated
+    /// against a destroyed instance and trap. A value cannot be destroyed out from under a view.
     let entry: TripLogEntry
 
+    @Environment(TripDataStack.self) private var stack
     @Environment(SettingsStore.self) private var settingsStore
-    @Environment(TripLogStore.self) private var tripLogStore
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     @State private var isShowingDeleteConfirmation = false
-    /// Loaded in `.task` rather than at init: the track lives in its own file (see `TripLogStore`) and
-    /// reading it is work the trip *list* must never pay for. Nil while loading and for any trip that
-    /// has no track — every trip saved before this feature shipped.
-    @State private var track: LoadedTrack?
+    /// Loaded in `.task`, not read off `trip` in the body. Both payloads are external-storage blobs, and
+    /// touching either one on this actor would fault the file in and decode it on the run loop — which is
+    /// precisely the cost the trip *list* is built never to pay. Nil while loading.
+    @State private var loaded: Loaded?
 
-    /// Everything the Route section and the share sheet need, derived **once** when the track loads.
-    /// `Map(initialPosition:)` consults its rect exactly once, at first creation, so recomputing the
-    /// bounding box inside the view builder would redo an O(samples) pass on every re-render — every
-    /// delete-confirmation toggle, every environment change — and throw the answer away each time.
-    private struct LoadedTrack {
+    /// The trip's decoded payloads, plus everything the Route section and the share sheet derive from them —
+    /// computed **once**, when they load. `Map(initialPosition:)` consults its rect exactly once, at first
+    /// creation, so recomputing the bounding box in the view builder would redo an O(samples) pass on every
+    /// re-render — every delete-confirmation toggle, every environment change — and throw it away each time.
+    private struct Loaded {
+        /// Empty for a trip recorded without usable altitude — including every trip saved before elevation
+        /// shipped.
+        let profile: [AltitudeSample]
+        /// Empty for a trip with no track — every trip saved before route recording shipped.
         let coordinates: [CLLocationCoordinate2D]
         let cameraRect: MKMapRect
         /// The GPX backing the share sheet. `ShareLink` needs a URL that already exists, so it cannot be
@@ -48,43 +61,47 @@ struct TripLogDetailView: View {
                 }
             }
 
-            if let track, track.coordinates.count >= 2 {
+            if let loaded, loaded.coordinates.count >= 2 {
                 Section("Route") {
-                    routeMap(for: track)
+                    routeMap(for: loaded)
                         .frame(height: 240)
                         .listRowInsets(EdgeInsets())
                 }
             }
 
             Section("Height profile") {
-                if entry.altitudeProfile.isEmpty {
-                    Text("No altitude data for this trip")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Chart(entry.altitudeProfile, id: \.distance) { sample in
-                        AreaMark(
-                            x: .value("Distance", sample.distance),
-                            y: .value("Altitude", sample.altitude)
-                        )
-                        .foregroundStyle(.orange.opacity(0.3))
-                        LineMark(
-                            x: .value("Distance", sample.distance),
-                            y: .value("Altitude", sample.altitude)
-                        )
-                        .foregroundStyle(.orange)
+                if let loaded {
+                    if loaded.profile.isEmpty {
+                        Text("No altitude data for this trip")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Chart(loaded.profile, id: \.distance) { sample in
+                            AreaMark(
+                                x: .value("Distance", sample.distance),
+                                y: .value("Altitude", sample.altitude)
+                            )
+                            .foregroundStyle(.orange.opacity(0.3))
+                            LineMark(
+                                x: .value("Distance", sample.distance),
+                                y: .value("Altitude", sample.altitude)
+                            )
+                            .foregroundStyle(.orange)
+                        }
+                        .frame(height: 200)
                     }
-                    .frame(height: 200)
+                } else {
+                    // The payloads are still decoding. Saying "no altitude data" here would be a lie that
+                    // corrects itself a frame later, which reads as a flicker.
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
         .navigationTitle(entry.startDate.formatted(date: .abbreviated, time: .omitted))
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            // Read through `routes` rather than `tripLogStore.route(for:)`: the store is `@MainActor`, so
-            // going through it would decode the track — and then render its GPX — on the run loop, stalling
-            // the first frame of a long trip. Both are O(samples), and a long ride is thousands of them.
-            let routes = tripLogStore.routes
             let id = entry.id
+            let repository = stack.repository // an actor reference; Sendable
             // Resolved here, on the main actor, so it can see the environment locale: `Date.formatted()`
             // without one follows the *device* language, not the in-app override (see `AppLanguage`).
             let trackName = entry.startDate.formatted(
@@ -92,27 +109,46 @@ struct TripLogDetailView: View {
             )
             let fileName = "BikeSpeed-\(Self.fileNameDateFormatter.string(from: entry.startDate))"
 
-            let prepared: ([RouteSample], URL?)? = await Task.detached {
-                guard let route = routes.load(id), !route.isEmpty else { return nil }
+            // The fetch reads only the two blob columns (`propertiesToFetch`), off the main actor, and hands
+            // back bytes — a `@Model` could not cross this boundary and does not need to.
+            let payloads = try? await repository.payloads(for: id)
+            let altitudeData = payloads?.altitudeData
+            let routeData = payloads?.routeData
+
+            // Still `Task.detached`, and it has to be. With `SWIFT_APPROACHABLE_CONCURRENCY = YES`, a plain
+            // `nonisolated async` function runs on its *caller's* executor — the main actor, here — so
+            // "just await it" would put this O(samples) decode and the GPX render straight back on the run
+            // loop, with no compiler complaint and no failing test to catch it.
+            let prepared = await Task.detached { () -> Loaded in
+                let profile = altitudeData
+                    .flatMap { try? TripPayloadCoder.decode([AltitudeSample].self, from: $0) } ?? []
+
+                guard let routeData,
+                      let route = try? TripPayloadCoder.decode([RouteSample].self, from: routeData),
+                      !route.isEmpty
+                else {
+                    return Loaded(profile: profile, coordinates: [], cameraRect: .world, gpxFileURL: nil)
+                }
+
                 let url = try? GPXExporter.write(
                     route: route,
                     trackName: trackName,
                     fileName: fileName,
                     in: GPXExporter.exportsDirectory(forTrip: id)
                 )
-                return (route, url)
+                let coordinates = route.map(\.coordinate)
+                return Loaded(
+                    profile: profile,
+                    coordinates: coordinates,
+                    cameraRect: Self.boundingRect(of: coordinates),
+                    gpxFileURL: url
+                )
             }.value
 
-            guard let (route, gpxFileURL) = prepared else { return }
-            let coordinates = route.map(\.coordinate)
-            track = LoadedTrack(
-                coordinates: coordinates,
-                cameraRect: Self.boundingRect(of: coordinates),
-                gpxFileURL: gpxFileURL
-            )
+            loaded = prepared
         }
         .toolbar {
-            if let gpxFileURL = track?.gpxFileURL {
+            if let gpxFileURL = loaded?.gpxFileURL {
                 ToolbarItem(placement: .primaryAction) {
                     ShareLink(item: gpxFileURL) {
                         Label("Export GPX", systemImage: "square.and.arrow.up")
@@ -132,7 +168,8 @@ struct TripLogDetailView: View {
             isPresented: $isShowingDeleteConfirmation
         ) {
             Button("Delete Trip", role: .destructive) {
-                tripLogStore.delete(id: entry.id)
+                let doomed = trip
+                Task { await stack.delete([doomed]) }
                 dismiss()
             }
             Button("Cancel", role: .cancel) {}
@@ -144,7 +181,7 @@ struct TripLogDetailView: View {
     /// The track, framed to itself. Interaction is off deliberately: this map lives inside a `Form`, and
     /// a pannable map there swallows the vertical drag the user meant for the page — the ride is being
     /// looked at, not explored, and the GPX export is there for anyone who wants to do more with it.
-    private func routeMap(for track: LoadedTrack) -> some View {
+    private func routeMap(for track: Loaded) -> some View {
         Map(initialPosition: .rect(track.cameraRect), interactionModes: []) {
             MapPolyline(coordinates: track.coordinates)
                 .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
@@ -163,7 +200,9 @@ struct TripLogDetailView: View {
     /// of the frame. The padding has a floor in *metres* because a ride can be perfectly straight — a due
     /// north commute has a bounding box zero wide, and a purely proportional inset of zero would leave the
     /// camera on a degenerate rect.
-    private static func boundingRect(of coordinates: [CLLocationCoordinate2D]) -> MKMapRect {
+    /// `nonisolated` so it can run inside the `Task.detached` above: it is an O(samples) pass, which is
+    /// precisely the kind of work that must not land on the run loop.
+    private nonisolated static func boundingRect(of coordinates: [CLLocationCoordinate2D]) -> MKMapRect {
         let rect = coordinates.reduce(MKMapRect.null) { rect, coordinate in
             let point = MKMapPoint(coordinate)
             return rect.union(MKMapRect(origin: point, size: MKMapSize(width: 0, height: 0)))
@@ -187,21 +226,29 @@ struct TripLogDetailView: View {
 }
 
 #Preview {
-    NavigationStack {
-        TripLogDetailView(entry: TripLogEntry(
-            id: UUID(),
-            startDate: Date(),
-            duration: 1830,
-            distance: 12_400,
-            averageSpeed: 6.8,
-            maxSpeed: 11.4,
-            altitudeProfile: stride(from: 0.0, through: 12_400.0, by: 200.0).map {
-                AltitudeSample(distance: $0, altitude: 100 + 30 * sin($0 / 1000))
-            },
-            totalAscent: 312,
-            totalDescent: 296
-        ))
-        .environment(SettingsStore())
-        .environment(TripLogStore())
+    let container = try! TripModelContainer.inMemory()
+    let profile = stride(from: 0.0, through: 12_400.0, by: 200.0).map {
+        AltitudeSample(distance: $0, altitude: 100 + 30 * sin($0 / 1000))
+    }
+    let trip = StoredTrip(
+        id: UUID(),
+        startDate: Date(),
+        duration: 1830,
+        distance: 12_400,
+        averageSpeed: 6.8,
+        maxSpeed: 11.4,
+        totalAscent: 312,
+        totalDescent: 296,
+        altitudeData: try? TripPayloadCoder.encode(profile),
+        routeData: nil,
+        updatedAt: Date()
+    )
+    container.mainContext.insert(trip)
+
+    return NavigationStack {
+        TripLogDetailView(trip: trip, entry: trip.entry)
+            .environment(TripDataStack(container: container))
+            .environment(SettingsStore())
+            .modelContainer(container)
     }
 }

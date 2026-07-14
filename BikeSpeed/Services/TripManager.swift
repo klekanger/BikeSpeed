@@ -51,12 +51,14 @@ final class TripManager {
     /// Set once in `start()` and never touched by `resume()`, unlike `activeStart` — this is the
     /// stable wall-clock start time saved into a `TripLogEntry`.
     private var tripStartDate: Date?
-    private var altitudeSamples: [AltitudeSample] = []
+    /// The trip's height profile, for the saved trip's elevation chart. `@ObservationIgnored` and read once
+    /// at Save, for the same reason as `routeSamples` below: nothing draws it live.
+    @ObservationIgnored private(set) var altitudeProfile: [AltitudeSample] = []
     private var lastAltitudeSampleDistance: CLLocationDistance = 0
     private let altitudeSampleDistanceInterval: CLLocationDistance = 25 // meters
 
     /// The trip's recorded track, for the detail map and the GPX export. Decimated by distance like
-    /// `altitudeSamples`, but far more finely: the height profile only needs its shape, whereas a
+    /// `altitudeProfile`, but far more finely: the height profile only needs its shape, whereas a
     /// track sampled every 25 m visibly cuts corners on a map and exports as a ride nobody rode.
     /// `@ObservationIgnored` — nothing draws it live, and waking observers for a growing array every
     /// few seconds would invalidate the gauge for no one's benefit. `TripControlBar` reads it once,
@@ -235,7 +237,7 @@ final class TripManager {
         tripStartDate = nil
         clearAutoPause() // safe here: `state` is never `.running`, so this can't start the clock
         lastAcceptedFix = nil
-        altitudeSamples.removeAll()
+        altitudeProfile.removeAll()
         lastAltitudeSampleDistance = 0
         routeSamples.removeAll()
         lastRouteSampleDistance = 0
@@ -254,6 +256,10 @@ final class TripManager {
 
     /// Snapshots the current trip into a saveable log entry. `nil` if there's no paused trip to
     /// save, or if the trip is too short/short-lived to be meaningful.
+    ///
+    /// The entry is the trip's *scalars* only. Its height profile and its track are separate payloads —
+    /// `altitudeProfile` and `routeSamples` — which the caller passes to `TripDataStack.save` alongside
+    /// this. See `TripLogEntry` for why they aren't in it.
     func makeLogEntry() -> TripLogEntry? {
         guard state == .paused, let tripStartDate else { return nil }
         guard accumulatedActiveDuration >= 5, accumulatedDistance >= 10 else { return nil }
@@ -264,7 +270,6 @@ final class TripManager {
             distance: accumulatedDistance,
             averageSpeed: averageSpeed,
             maxSpeed: maxSpeed,
-            altitudeProfile: altitudeSamples,
             // Already nil when no fix ever carried a usable altitude: "we don't know" must stay
             // distinguishable from "it was flat". See `TripLogEntry`.
             totalAscent: totalAscent,
@@ -390,7 +395,7 @@ final class TripManager {
         guard let previous = previousLocation else {
             anchor(on: location)
             if let altitude = location.usableAltitude(within: Self.maxAltitudeVerticalAccuracy) {
-                altitudeSamples.append(AltitudeSample(distance: 0, altitude: altitude))
+                altitudeProfile.append(AltitudeSample(distance: 0, altitude: altitude))
             }
             appendRouteSample(from: location)
             sampleElevation(from: location)
@@ -421,7 +426,7 @@ final class TripManager {
 
         if let altitude = location.usableAltitude(within: Self.maxAltitudeVerticalAccuracy),
            accumulatedDistance - lastAltitudeSampleDistance >= altitudeSampleDistanceInterval {
-            altitudeSamples.append(AltitudeSample(distance: accumulatedDistance, altitude: altitude))
+            altitudeProfile.append(AltitudeSample(distance: accumulatedDistance, altitude: altitude))
             lastAltitudeSampleDistance = accumulatedDistance
         }
 

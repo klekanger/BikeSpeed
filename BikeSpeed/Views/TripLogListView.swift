@@ -1,12 +1,24 @@
 import CoreLocation
+import SwiftData
 import SwiftUI
 
 /// Sheet-presented list of saved trips, newest first, under the rider's lifetime totals and personal bests
 /// (see `TripLogSummary`). Each row shows only a few details (date, distance, duration); tapping a row
 /// pushes to `TripLogDetailView` for the full breakdown.
 struct TripLogListView: View {
-    let store: TripLogStore
+    /// Live, sorted by the database, and it never loads a row it does not draw. The old store re-published
+    /// an entire in-memory array on every change; this re-runs when a row actually changes.
+    ///
+    /// The `deletedAt` filter is a no-op today — nothing writes that field. It is here so that the day
+    /// `TripDataStack.delete` starts soft-deleting for sync, this view does not have to change at all.
+    @Query(
+        filter: #Predicate<StoredTrip> { $0.deletedAt == nil },
+        sort: \StoredTrip.startDate,
+        order: .reverse
+    )
+    private var trips: [StoredTrip]
 
+    @Environment(TripDataStack.self) private var stack
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
@@ -14,27 +26,34 @@ struct TripLogListView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if store.entries.isEmpty {
+                if trips.isEmpty {
                     ContentUnavailableView("No trips logged yet", systemImage: "list.bullet.clipboard")
                 } else {
                     List {
-                        summarySections(for: TripLogSummary(entries: store.entries, calendar: rideCalendar))
+                        // Its own view, not a `@ViewBuilder` helper here, so its body — which reduces the
+                        // whole log eight times over (three period totals, four personal bests) — is skipped
+                        // whenever the query hasn't actually changed, instead of re-running on every locale
+                        // change, sheet toggle and delete animation.
+                        TripLogSummarySection(trips: trips)
 
                         Section {
-                            ForEach(store.entries) { entry in
-                                NavigationLink(value: entry) {
-                                    row(for: entry)
+                            ForEach(trips) { trip in
+                                NavigationLink(value: trip) {
+                                    row(for: trip.entry)
                                 }
                             }
                             .onDelete { offsets in
-                                store.delete(at: offsets)
+                                let doomed = offsets.map { trips[$0] }
+                                Task { await stack.delete(doomed) }
                             }
                         }
                     }
                 }
             }
-            .navigationDestination(for: TripLogEntry.self) { entry in
-                TripLogDetailView(entry: entry)
+            .navigationDestination(for: StoredTrip.self) { trip in
+                // The value snapshot is taken *here*, while the row is still alive. The detail view must not
+                // read the model in its body — deleting from there would destroy it mid-pop.
+                TripLogDetailView(trip: trip, entry: trip.entry)
             }
             .navigationTitle(settingsStore.appLanguage.localizedString(forKey: "Trip Log"))
             .toolbar {
@@ -43,56 +62,6 @@ struct TripLogListView: View {
                 }
             }
         }
-    }
-
-    /// **`Calendar.current`, not the in-app language's calendar.** Where the week starts is a fact about
-    /// where the rider lives, not about which language they read the app in: a Norwegian who runs BikeSpeed
-    /// in English still rides through a week that begins on Monday. The device's region settles it.
-    private var rideCalendar: Calendar { .current }
-
-    @ViewBuilder
-    private func summarySections(for summary: TripLogSummary) -> some View {
-        Section("Totals") {
-            LabeledContent("Rides", value: summary.allTime.rideCount.formatted(.number.locale(locale)))
-            LabeledContent("Total distance", value: distance(summary.allTime.distance))
-            LabeledContent("Total time", value: TripDurationFormatting.formatted(seconds: summary.allTime.duration, locale: locale))
-            // Hidden rather than shown as "0 m" when no ride ever recorded a climb — every trip saved before
-            // elevation shipped has no ascent figure at all, and a zero here would call them flat.
-            if summary.allTime.ascent > 0 {
-                LabeledContent("Total ascent", value: altitude(summary.allTime.ascent))
-            }
-            LabeledContent("This week", value: distance(summary.thisWeek.distance))
-            LabeledContent("This month", value: distance(summary.thisMonth.distance))
-        }
-
-        Section("Personal bests") {
-            if let longest = summary.personalBests.longestRide {
-                LabeledContent("Longest ride", value: distance(longest.distance))
-            }
-            if let fastest = summary.personalBests.fastestAverage {
-                LabeledContent("Fastest average", value: speed(fastest.averageSpeed))
-            }
-            if let quickest = summary.personalBests.highestMaxSpeed {
-                LabeledContent("Top speed", value: speed(quickest.maxSpeed))
-            }
-            // Absent, not zero, when nothing in the log ever recorded altitude: there is no climbing record
-            // to hold, rather than a 0 m one.
-            if let ascent = summary.personalBests.biggestClimb?.totalAscent {
-                LabeledContent("Biggest climb", value: altitude(ascent))
-            }
-        }
-    }
-
-    private func distance(_ meters: CLLocationDistance) -> String {
-        settingsStore.measurementSystem.formattedDistance(meters: meters, locale: locale)
-    }
-
-    private func altitude(_ meters: CLLocationDistance) -> String {
-        settingsStore.measurementSystem.formattedAltitude(meters: meters, locale: locale)
-    }
-
-    private func speed(_ metersPerSecond: CLLocationSpeed) -> String {
-        settingsStore.measurementSystem.formattedSpeed(metersPerSecond: metersPerSecond, locale: locale)
     }
 
     private func row(for entry: TripLogEntry) -> some View {
@@ -111,6 +80,9 @@ struct TripLogListView: View {
 }
 
 #Preview {
-    TripLogListView(store: TripLogStore())
+    let container = try! TripModelContainer.inMemory()
+    TripLogListView()
+        .environment(TripDataStack(container: container))
         .environment(SettingsStore())
+        .modelContainer(container)
 }

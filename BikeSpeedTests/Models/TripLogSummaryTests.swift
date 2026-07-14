@@ -185,7 +185,6 @@ struct TripLogSummaryTests {
             distance: distance,
             averageSpeed: averageSpeed,
             maxSpeed: maxSpeed,
-            altitudeProfile: [],
             totalAscent: ascent,
             totalDescent: ascent
         )
