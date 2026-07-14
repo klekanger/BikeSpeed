@@ -24,6 +24,9 @@ final class LocationManager: NSObject, ObservableObject {
     private let goodHorizontalAccuracy: CLLocationAccuracy = 10
     private let maxHorizontalAccuracy: CLLocationAccuracy = 30
     private let courseSpeedThreshold: CLLocationSpeed = 1.0 // m/s (~3.6 km/h) below which GPS course is noise
+    /// Narrowest the standstill deadband is allowed to get (see `process`), and the width used for fixes
+    /// that report no speed accuracy at all. ~1.8 km/h: below that you are pushing the bike, not riding it.
+    private let standstillSpeedFloor: CLLocationSpeed = 0.5 // m/s
     /// How old a fix may be and still be treated as current. Age has to be filtered separately from
     /// accuracy: `startUpdatingLocation()` replays the last cached fix immediately, and that fix can
     /// be minutes old while still carrying excellent `horizontalAccuracy`, so the accuracy filter
@@ -114,7 +117,17 @@ extension LocationManager: CLLocationManagerDelegate {
         }
         hasFix = true
 
-        rawSpeed = location.speed < 0 ? 0 : location.speed
+        // GPS speed doesn't settle at zero when the bike does: it wanders a few tenths of a m/s, which
+        // the gauge draws as a needle creeping up to 1–2 km/h and back with the bike parked. Smoothing
+        // can't help — the noise is in the input. `speedAccuracy` is CoreLocation's own error bar on the
+        // speed it just reported, so a reading inside it is indistinguishable from standing still, and
+        // the deadband widens exactly when the fix turns noisy (indoors, in a street canyon) rather than
+        // guessing one width for every condition. Bounded at both ends: never narrower than the floor,
+        // since a fix reporting no speed accuracy sets it negative, and never wider than the threshold
+        // this file already treats as the line below which GPS is noise, so a pessimistic error bar
+        // cannot swallow a real ride. The negative "speed unknown" sentinel falls out of the same rule.
+        let speedNoiseFloor = min(max(location.speedAccuracy, standstillSpeedFloor), courseSpeedThreshold)
+        rawSpeed = location.speed <= speedNoiseFloor ? 0 : location.speed
         displaySpeed = smoothingFactor * rawSpeed + (1 - smoothingFactor) * displaySpeed
 
         let courseIsReliable = location.course >= 0 && (location.courseAccuracy < 0 || location.courseAccuracy <= 90)
