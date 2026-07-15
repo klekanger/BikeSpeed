@@ -5,6 +5,7 @@
 //  Created by Kurt Lekanger on 04/07/2026.
 //
 
+import SwiftData
 import SwiftUI
 
 struct ContentView: View {
@@ -12,7 +13,6 @@ struct ContentView: View {
     @Environment(AddressLookupManager.self) private var addressLookupManager
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(TripManager.self) private var tripManager
-    @Environment(TripLogStore.self) private var tripLogStore
 
     @State private var isShowingSettings = false
     @State private var isShowingTripLog = false
@@ -103,7 +103,7 @@ struct ContentView: View {
             SettingsView(settings: settingsStore)
         }
         .sheet(isPresented: $isShowingTripLog) {
-            TripLogListView(store: tripLogStore)
+            TripLogListView()
         }
     }
 }
@@ -111,6 +111,7 @@ struct ContentView: View {
 #Preview {
     let locationManager = LocationManager()
     let settingsStore = SettingsStore()
+    let container = try! TripModelContainer.inMemory()
 
     ContentView()
         .environment(locationManager)
@@ -118,5 +119,6 @@ struct ContentView: View {
         .environment(settingsStore)
         .environment(TripManager(locationManager: locationManager, altimeter: AltimeterManager(), settings: settingsStore))
         .environment(MotionManager())
-        .environment(TripLogStore())
+        .environment(TripDataStack(container: container))
+        .modelContainer(container)
 }
