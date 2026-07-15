@@ -1,9 +1,12 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var settings: SettingsStore
+    /// `@Bindable`, not `@Environment`: the settings sheet is the one place that *writes* the store, and
+    /// this is what keeps the `$settings.autoPauseEnabled` bindings below working verbatim.
+    @Bindable var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
@@ -74,22 +77,43 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-               VStack(spacing: 4) {
-                   HStack(spacing: 4) {
-                       Text(verbatim: "BikeSpeed")
-                           .foregroundStyle(.primary)
-                       Text(verbatim: "v\(appVersion)")
-                           .foregroundStyle(.primary)
-                   }
-                   Text(verbatim: "Lekanger tekst og kode 2026")
-                   Text(verbatim: "MIT License")
-               }
-               .font(.footnote)
-               .foregroundStyle(.secondary)
-               .frame(maxWidth: .infinity)
-               .padding(.bottom, 24)
+                
+                // Only after an actual denial on barometer hardware — the prompt itself can never
+                // be re-shown, so the Settings toggle is the one way back (see the predicate's doc).
+                if AltimeterManager.needsMotionPermissionHint() {
+                    Section {
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        }
+                    } header: {
+                        // Deliberately not the bare "Climb" key — the stats cell's climb page shares it.
+                        Text("Climb (accuracy)")
+                    } footer: {
+                        Text("Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings.")
+                            .foregroundStyle(Color.red)
+                    }
+                }
+
+                // Scrolls with the content rather than sitting in a safe-area inset, so it can
+                // never overlap the last section however many sections are shown above it.
+                Section {
+                } footer: {
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Text(verbatim: "BikeSpeed")
+                            Text(verbatim: "v\(appVersion)")
+                        }
+                        .foregroundStyle(.primary)
+                        Text(verbatim: "Lekanger tekst og kode 2026")
+                        Text(verbatim: "MIT License")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
+                }
             }
            .navigationTitle(settings.appLanguage.localizedString(forKey: "Settings"))
            .toolbar {

@@ -7,7 +7,7 @@ struct SpeedometerGaugeView: View {
     let measurementSystem: MeasurementSystem
 
     @Environment(\.locale) private var locale
-    @EnvironmentObject private var motionManager: MotionManager
+    @Environment(MotionManager.self) private var motionManager
 
     private var maxSpeedInDisplayUnit: Double {
         measurementSystem.maxGaugeSpeedValue(fromCanonicalKMH: maxGaugeSpeedKMH)
@@ -82,7 +82,7 @@ struct SpeedometerGaugeView: View {
         Color.black
         SpeedometerGaugeView(speed: 10, maxGaugeSpeedKMH: 60, measurementSystem: .metric)
             .padding(24)
-            .environmentObject(MotionManager())
+            .environment(MotionManager())
     }
     .ignoresSafeArea()
 }

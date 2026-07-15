@@ -1,10 +1,13 @@
 import SwiftUI
 
 struct TripControlBar: View {
-    @ObservedObject var tripManager: TripManager
-    @EnvironmentObject private var tripLogStore: TripLogStore
+    /// A plain property: an `@Observable` is tracked wherever its properties are read in a body, so it
+    /// needs no wrapper to stay live — only `@Bindable` (to write) or `@State` (to own) would.
+    let tripManager: TripManager
+    @Environment(TripDataStack.self) private var stack
 
     @State private var isShowingSavedConfirmation = false
+    @State private var isShowingSaveFailure = false
 
     var body: some View {
         Group {
@@ -12,6 +15,11 @@ struct TripControlBar: View {
         }
         .alert("Trip saved", isPresented: $isShowingSavedConfirmation) {
             Button("OK") {}
+        }
+        .alert("Couldn't save trip", isPresented: $isShowingSaveFailure) {
+            Button("OK") {}
+        } message: {
+            Text("Your ride hasn't been lost — it's still paused. Try saving again.")
         }
     }
 
@@ -40,7 +48,7 @@ struct TripControlBar: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glass)
-                    .disabled(tripManager.state == .running)
+                    .disabled(!tripManager.canResetTrip)
                 }
                 .font(.system(size: 17, weight: .semibold))
                 .padding(.horizontal)
@@ -67,7 +75,7 @@ struct TripControlBar: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .disabled(tripManager.state == .running)
+                .disabled(!tripManager.canResetTrip)
             }
             .font(.system(size: 17, weight: .semibold))
             .padding(.horizontal)
@@ -104,19 +112,37 @@ struct TripControlBar: View {
         }
     }
 
+    /// **The reset comes after the write, not before it.** `reset()` throws away the only other copy of the
+    /// ride, and the confirmation alert tells the rider it is safe — so neither may happen until the store
+    /// says the trip is actually on disk. If the save fails, the trip is still paused and still theirs, and
+    /// tapping Save again retries it.
     private func saveAction() {
         guard let entry = tripManager.makeLogEntry() else { return }
-        tripLogStore.save(entry)
-        tripManager.reset()
-        isShowingSavedConfirmation = true
+        // The payloads travel alongside the entry rather than inside it — see `TripLogEntry` for why the trip
+        // list must never carry a ride's track.
+        let profile = tripManager.altitudeProfile
+        let route = tripManager.routeSamples
+
+        Task {
+            do {
+                // The encode is O(samples) and runs off the main actor; the insert lands on the main context,
+                // so the ride is in the trip list's `@Query` by the time this returns.
+                try await stack.save(entry, altitudeProfile: profile, route: route)
+                tripManager.reset()
+                isShowingSavedConfirmation = true
+            } catch {
+                isShowingSaveFailure = true
+            }
+        }
     }
 }
 
 #Preview {
-    ZStack {
+    let container = try! TripModelContainer.inMemory()
+    return ZStack {
         Color.black
-        TripControlBar(tripManager: TripManager(locationManager: LocationManager(), settings: SettingsStore()))
-            .environmentObject(TripLogStore())
+        TripControlBar(tripManager: TripManager(locationManager: LocationManager(), altimeter: AltimeterManager(), settings: SettingsStore()))
+            .environment(TripDataStack(container: container))
     }
     .ignoresSafeArea()
 }

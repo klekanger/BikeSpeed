@@ -1,34 +1,59 @@
+import CoreLocation
+import SwiftData
 import SwiftUI
 
-/// Sheet-presented list of saved trips, newest first. Each row shows only a few details (date,
-/// distance, duration); tapping a row pushes to `TripLogDetailView` for the full breakdown.
+/// Sheet-presented list of saved trips, newest first, under the rider's lifetime totals and personal bests
+/// (see `TripLogSummary`). Each row shows only a few details (date, distance, duration); tapping a row
+/// pushes to `TripLogDetailView` for the full breakdown.
 struct TripLogListView: View {
-    @ObservedObject var store: TripLogStore
+    /// Live, sorted by the database, and it never loads a row it does not draw. The old store re-published
+    /// an entire in-memory array on every change; this re-runs when a row actually changes.
+    ///
+    /// The `deletedAt` filter is a no-op today — nothing writes that field. It is here so that the day
+    /// `TripDataStack.delete` starts soft-deleting for sync, this view does not have to change at all.
+    @Query(
+        filter: #Predicate<StoredTrip> { $0.deletedAt == nil },
+        sort: \StoredTrip.startDate,
+        order: .reverse
+    )
+    private var trips: [StoredTrip]
 
-    @EnvironmentObject private var settingsStore: SettingsStore
+    @Environment(TripDataStack.self) private var stack
+    @Environment(SettingsStore.self) private var settingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
 
     var body: some View {
         NavigationStack {
             Group {
-                if store.entries.isEmpty {
+                if trips.isEmpty {
                     ContentUnavailableView("No trips logged yet", systemImage: "list.bullet.clipboard")
                 } else {
                     List {
-                        ForEach(store.entries) { entry in
-                            NavigationLink(value: entry) {
-                                row(for: entry)
+                        // Its own view, not a `@ViewBuilder` helper here, so its body — which reduces the
+                        // whole log eight times over (three period totals, four personal bests) — is skipped
+                        // whenever the query hasn't actually changed, instead of re-running on every locale
+                        // change, sheet toggle and delete animation.
+                        TripLogSummarySection(trips: trips)
+
+                        Section {
+                            ForEach(trips) { trip in
+                                NavigationLink(value: trip) {
+                                    row(for: trip.entry)
+                                }
                             }
-                        }
-                        .onDelete { offsets in
-                            store.delete(at: offsets)
+                            .onDelete { offsets in
+                                let doomed = offsets.map { trips[$0] }
+                                Task { await stack.delete(doomed) }
+                            }
                         }
                     }
                 }
             }
-            .navigationDestination(for: TripLogEntry.self) { entry in
-                TripLogDetailView(entry: entry)
+            .navigationDestination(for: StoredTrip.self) { trip in
+                // The value snapshot is taken *here*, while the row is still alive. The detail view must not
+                // read the model in its body — deleting from there would destroy it mid-pop.
+                TripLogDetailView(trip: trip, entry: trip.entry)
             }
             .navigationTitle(settingsStore.appLanguage.localizedString(forKey: "Trip Log"))
             .toolbar {
@@ -55,6 +80,9 @@ struct TripLogListView: View {
 }
 
 #Preview {
-    TripLogListView(store: TripLogStore())
-        .environmentObject(SettingsStore())
+    let container = try! TripModelContainer.inMemory()
+    TripLogListView()
+        .environment(TripDataStack(container: container))
+        .environment(SettingsStore())
+        .modelContainer(container)
 }
