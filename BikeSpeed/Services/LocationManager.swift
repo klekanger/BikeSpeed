@@ -1,28 +1,37 @@
-import CoreLocation
 import Combine
+import CoreLocation
+import Observation
 
 /// Wraps CLLocationManager, publishing filtered/smoothed speed, course, altitude, and position.
 /// All published values are in SI units (m/s, meters, degrees) — unit conversion happens only in views.
 @MainActor
-final class LocationManager: NSObject, ObservableObject {
-    @Published private(set) var rawSpeed: Double = 0
-    @Published private(set) var displaySpeed: Double = 0
-    @Published private(set) var course: Double?
+@Observable
+final class LocationManager: NSObject {
+    private(set) var rawSpeed: Double = 0
+    private(set) var displaySpeed: Double = 0
+    private(set) var course: Double?
     /// The magnetometer, smoothed circularly (see `CircularMean`). Nil where there is no magnetometer —
     /// the Simulator — and until the first usable reading arrives.
-    @Published private(set) var heading: Double?
+    private(set) var heading: Double?
     /// Whether `course` is currently being refreshed by fixes, i.e. the rider is moving fast enough for GPS
     /// course to mean anything. This has to be its own flag: `course` is deliberately *sticky*, holding its
     /// last value at a standstill rather than jittering, so it is never nil once set and `course ?? heading`
     /// could never fall back to the compass.
-    @Published private(set) var isCourseLive = false
-    @Published private(set) var altitude: Double?
-    @Published private(set) var coordinate: CLLocationCoordinate2D?
-    @Published private(set) var hasFix: Bool = false
-    @Published private(set) var signalQuality: GPSSignalQuality = .poor
-    @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    private(set) var isCourseLive = false
+    private(set) var altitude: Double?
+    private(set) var coordinate: CLLocationCoordinate2D?
+    private(set) var hasFix: Bool = false
+    private(set) var signalQuality: GPSSignalQuality = .poor
+    private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
-    /// Fixes that passed the accuracy filter, for TripManager to consume for distance accumulation.
+    /// Fixes that passed the accuracy filter, for `TripManager` and `AddressLookupManager` to consume.
+    ///
+    /// **Stays a Combine subject under `@Observable`, deliberately.** An accepted fix is an *event*;
+    /// Observation observes *state*, and two consecutive identical fixes are a real thing a rider at a
+    /// standstill produces constantly — there is no property whose change means "a fix arrived". It is
+    /// also what keeps delivery *synchronous*: `TripManager.consume(_:)` runs inside `process(_:)`, which
+    /// is why a test can move the rider and assert distance on the very next line without an `await`.
+    /// An `AsyncStream` would make that asynchronous and buy nothing.
     let acceptedLocations = PassthroughSubject<CLLocation, Never>()
 
     /// **The direction the rider is actually travelling**, which is not the same question as either sensor
@@ -42,8 +51,9 @@ final class LocationManager: NSObject, ObservableObject {
 
     private let manager = CLLocationManager()
     /// Smoothed on the unit circle, not in degrees — a plain average of 359° and 1° is due *south*. See
-    /// `CircularMean`; that is the entire reason it exists.
-    private var headingSmoother = CircularMean(smoothingFactor: 0.25)
+    /// `CircularMean`; that is the entire reason it exists. Untracked: it is the filter's internal state,
+    /// and `heading` — which is what anyone actually draws — is the observable answer it produces.
+    @ObservationIgnored private var headingSmoother = CircularMean(smoothingFactor: 0.25)
     private let smoothingFactor = 0.35
     /// Upper bound on horizontal accuracy for the green "good" band; up to `maxHorizontalAccuracy`
     /// is the yellow "fair" band. Worse than that is red "poor" and the fix is rejected.

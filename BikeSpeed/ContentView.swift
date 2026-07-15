@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var locationManager: LocationManager
-    @EnvironmentObject private var addressLookupManager: AddressLookupManager
-    @EnvironmentObject private var settingsStore: SettingsStore
-    @EnvironmentObject private var tripManager: TripManager
-    @EnvironmentObject private var tripLogStore: TripLogStore
+    @Environment(LocationManager.self) private var locationManager
+    @Environment(AddressLookupManager.self) private var addressLookupManager
+    @Environment(SettingsStore.self) private var settingsStore
+    @Environment(TripManager.self) private var tripManager
+    @Environment(TripLogStore.self) private var tripLogStore
 
     @State private var isShowingSettings = false
     @State private var isShowingTripLog = false
@@ -113,10 +113,10 @@ struct ContentView: View {
     let settingsStore = SettingsStore()
 
     ContentView()
-        .environmentObject(locationManager)
-        .environmentObject(AddressLookupManager(locationManager: locationManager))
-        .environmentObject(settingsStore)
-        .environmentObject(TripManager(locationManager: locationManager, altimeter: AltimeterManager(), settings: settingsStore))
-        .environmentObject(MotionManager())
-        .environmentObject(TripLogStore())
+        .environment(locationManager)
+        .environment(AddressLookupManager(locationManager: locationManager))
+        .environment(settingsStore)
+        .environment(TripManager(locationManager: locationManager, altimeter: AltimeterManager(), settings: settingsStore))
+        .environment(MotionManager())
+        .environment(TripLogStore())
 }

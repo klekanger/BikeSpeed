@@ -34,7 +34,7 @@ struct StatsPanel: View {
     let appLanguage: AppLanguage
 
     @Environment(\.locale) private var locale
-    @EnvironmentObject private var motionManager: MotionManager
+    @Environment(MotionManager.self) private var motionManager
 
     @State private var speedPage = 0
     @State private var distancePage = 0
@@ -202,7 +202,7 @@ struct StatsPanel: View {
         )
         .frame(height: 260)
         .padding()
-        .environmentObject(MotionManager())
+        .environment(MotionManager())
     }
     .ignoresSafeArea()
 }

@@ -5,9 +5,9 @@ import SwiftUI
 /// (see `TripLogSummary`). Each row shows only a few details (date, distance, duration); tapping a row
 /// pushes to `TripLogDetailView` for the full breakdown.
 struct TripLogListView: View {
-    @ObservedObject var store: TripLogStore
+    let store: TripLogStore
 
-    @EnvironmentObject private var settingsStore: SettingsStore
+    @Environment(SettingsStore.self) private var settingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
 
@@ -112,5 +112,5 @@ struct TripLogListView: View {
 
 #Preview {
     TripLogListView(store: TripLogStore())
-        .environmentObject(SettingsStore())
+        .environment(SettingsStore())
 }

@@ -9,23 +9,26 @@ import SwiftUI
 
 @main
 struct BikeSpeedApp: App {
-    @StateObject private var locationManager: LocationManager
-    @StateObject private var addressLookupManager: AddressLookupManager
-    @StateObject private var settingsStore: SettingsStore
-    @StateObject private var tripManager: TripManager
-    @StateObject private var altimeterManager: AltimeterManager
-    @StateObject private var motionManager = MotionManager()
-    @StateObject private var tripLogStore = TripLogStore()
+    @State private var locationManager: LocationManager
+    @State private var addressLookupManager: AddressLookupManager
+    @State private var settingsStore: SettingsStore
+    @State private var tripManager: TripManager
+    @State private var motionManager = MotionManager()
+    @State private var tripLogStore = TripLogStore()
+
+    /// Held, but neither `@State` nor in the environment: it is not observable and no view reads it —
+    /// `TripManager` is its only consumer, and samples it directly. See `AltimeterManager`.
+    private let altimeterManager: AltimeterManager
 
     init() {
         let locationManager = LocationManager()
         let settingsStore = SettingsStore()
         let altimeterManager = AltimeterManager()
-        _locationManager = StateObject(wrappedValue: locationManager)
-        _settingsStore = StateObject(wrappedValue: settingsStore)
-        _altimeterManager = StateObject(wrappedValue: altimeterManager)
-        _tripManager = StateObject(wrappedValue: TripManager(locationManager: locationManager, altimeter: altimeterManager, settings: settingsStore))
-        _addressLookupManager = StateObject(wrappedValue: AddressLookupManager(locationManager: locationManager))
+        self.altimeterManager = altimeterManager
+        _locationManager = State(initialValue: locationManager)
+        _settingsStore = State(initialValue: settingsStore)
+        _tripManager = State(initialValue: TripManager(locationManager: locationManager, altimeter: altimeterManager, settings: settingsStore))
+        _addressLookupManager = State(initialValue: AddressLookupManager(locationManager: locationManager))
 
         // Every trip detail view opened last session left a `.gpx` in `tmp/`, and iOS only reaps that
         // directory under storage pressure. Launch is the one moment no share sheet can still be reading
@@ -36,12 +39,12 @@ struct BikeSpeedApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(locationManager)
-                .environmentObject(addressLookupManager)
-                .environmentObject(settingsStore)
-                .environmentObject(tripManager)
-                .environmentObject(motionManager)
-                .environmentObject(tripLogStore)
+                .environment(locationManager)
+                .environment(addressLookupManager)
+                .environment(settingsStore)
+                .environment(tripManager)
+                .environment(motionManager)
+                .environment(tripLogStore)
                 .environment(\.locale, settingsStore.appLanguage.locale ?? Locale.autoupdatingCurrent)
         }
     }

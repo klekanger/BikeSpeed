@@ -1,6 +1,7 @@
 import Combine
 import CoreLocation
 import MapKit
+import Observation
 
 /// Reverse-geocodes accepted GPS fixes into the name of the street the rider is currently on.
 ///
@@ -17,19 +18,22 @@ import MapKit
 /// Consecutive failures back the interval off exponentially up to `maximumLookupInterval`: if we
 /// *are* being throttled, retrying at a fixed 10 s only keeps us throttled.
 @MainActor
-final class AddressLookupManager: ObservableObject {
+@Observable
+final class AddressLookupManager {
     /// The street the rider is currently on, or nil when unknown — no lookup has resolved yet, or
     /// the position is genuinely off-road. Held at its last value across geocoding *failures*
     /// rather than blanking, since a network blip is no reason to throw away a good answer.
-    @Published private(set) var streetName: String?
+    private(set) var streetName: String?
 
-    private var cancellable: AnyCancellable?
+    /// All untracked: the lookup gates are this type's own bookkeeping, and `streetName` is the only
+    /// thing anyone draws.
+    @ObservationIgnored private var cancellable: AnyCancellable?
     /// Position of the last *resolved* lookup — the anchor the distance gate measures against.
-    private var lastLookupLocation: CLLocation?
+    @ObservationIgnored private var lastLookupLocation: CLLocation?
     /// Time of the last *attempt*, resolved or not; this is what the interval gate measures against.
-    private var lastLookupAttempt: Date?
-    private var isLookupInProgress = false
-    private var consecutiveFailures = 0
+    @ObservationIgnored private var lastLookupAttempt: Date?
+    @ObservationIgnored private var isLookupInProgress = false
+    @ObservationIgnored private var consecutiveFailures = 0
 
     private let minimumDistanceMeters: CLLocationDistance = 75
     private let minimumLookupInterval: TimeInterval = 10

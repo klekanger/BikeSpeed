@@ -1,8 +1,10 @@
 import SwiftUI
 
 struct TripControlBar: View {
-    @ObservedObject var tripManager: TripManager
-    @EnvironmentObject private var tripLogStore: TripLogStore
+    /// A plain property: an `@Observable` is tracked wherever its properties are read in a body, so it
+    /// needs no wrapper to stay live — only `@Bindable` (to write) or `@State` (to own) would.
+    let tripManager: TripManager
+    @Environment(TripLogStore.self) private var tripLogStore
 
     @State private var isShowingSavedConfirmation = false
 
@@ -119,7 +121,7 @@ struct TripControlBar: View {
     ZStack {
         Color.black
         TripControlBar(tripManager: TripManager(locationManager: LocationManager(), altimeter: AltimeterManager(), settings: SettingsStore()))
-            .environmentObject(TripLogStore())
+            .environment(TripLogStore())
     }
     .ignoresSafeArea()
 }
