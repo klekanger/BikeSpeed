@@ -50,12 +50,6 @@ struct StatCell: View {
 
     static let defaultPageIndicatorInset: CGFloat = 8
 
-    /// The icon's rotation, unwound so it animates the short way across north — see `ContinuousBearing`.
-    /// Driven off `iconRotation` in `.onChange` rather than computed inline, because the unwinding is
-    /// stateful: each step is measured from the last angle actually shown, not from zero.
-    @State private var displayedRotation: Angle = .zero
-    @State private var bearing = ContinuousBearing()
-
     /// The gestures, the haptic and the activation action hang off the paging branch alone, so a
     /// single-readout cell neither swallows a tap nor tells VoiceOver it can be activated.
     @ViewBuilder var body: some View {
@@ -93,11 +87,7 @@ struct StatCell: View {
                 .font(.system(size: 24))
                 .foregroundStyle(iconTint)
                 .contentTransition(.symbolEffect(.replace))
-                .rotationEffect(displayedRotation)
-                .animation(.easeInOut(duration: 0.3), value: displayedRotation)
-                .onChange(of: iconRotation, initial: true) { _, newValue in
-                    displayedRotation = .degrees(bearing.update(newValue.degrees))
-                }
+                .modifier(ContinuousIconRotation(bearing: iconRotation))
                 .accessibilityHidden(true)
 
             Text(value)
@@ -187,6 +177,25 @@ struct StatCell: View {
         withAnimation(.easeInOut(duration: 0.25)) {
             paging.page.wrappedValue = (paging.page.wrappedValue + delta + count) % count
         }
+    }
+}
+
+/// Rotates the icon to a wrapping compass bearing, unwound via `ContinuousBearing` so the animation
+/// crosses north the short way instead of whipping a half-turn back through south. The unwinding is
+/// stateful — each step is measured from the last angle actually shown, not from zero — so it has to
+/// run in `.onChange` and can't be a value computed inline in `body`. A `.zero` bearing (an ordinary,
+/// non-rotating stat icon) simply stays upright: it unwinds from zero and never moves.
+private struct ContinuousIconRotation: ViewModifier {
+    let bearing: Angle
+    @State private var unwound = ContinuousBearing()
+
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(unwound.degrees))
+            .animation(.easeInOut(duration: 0.3), value: unwound.degrees)
+            .onChange(of: bearing, initial: true) { _, newValue in
+                unwound.update(newValue.degrees)
+            }
     }
 }
 

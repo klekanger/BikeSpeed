@@ -30,10 +30,10 @@ struct ContinuousBearing {
             return degrees
         }
 
-        var delta = (bearing - degrees).truncatingRemainder(dividingBy: 360)
-        if delta < -180 { delta += 360 }
-        if delta > 180 { delta -= 360 }
-        degrees += delta
+        // IEEE `remainder` rounds the quotient to nearest, so it folds the raw gap into [-180, 180] —
+        // exactly the shortest signed step. The running total then drifts past 360° (or below 0°)
+        // rather than jumping the long way round.
+        degrees += (bearing - degrees).remainder(dividingBy: 360)
         return degrees
     }
 }
