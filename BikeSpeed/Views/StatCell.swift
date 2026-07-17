@@ -50,6 +50,12 @@ struct StatCell: View {
 
     static let defaultPageIndicatorInset: CGFloat = 8
 
+    /// The icon's rotation, unwound so it animates the short way across north — see `ContinuousBearing`.
+    /// Driven off `iconRotation` in `.onChange` rather than computed inline, because the unwinding is
+    /// stateful: each step is measured from the last angle actually shown, not from zero.
+    @State private var displayedRotation: Angle = .zero
+    @State private var bearing = ContinuousBearing()
+
     /// The gestures, the haptic and the activation action hang off the paging branch alone, so a
     /// single-readout cell neither swallows a tap nor tells VoiceOver it can be activated.
     @ViewBuilder var body: some View {
@@ -87,8 +93,11 @@ struct StatCell: View {
                 .font(.system(size: 24))
                 .foregroundStyle(iconTint)
                 .contentTransition(.symbolEffect(.replace))
-                .rotationEffect(iconRotation)
-                .animation(.easeInOut(duration: 0.3), value: iconRotation)
+                .rotationEffect(displayedRotation)
+                .animation(.easeInOut(duration: 0.3), value: displayedRotation)
+                .onChange(of: iconRotation, initial: true) { _, newValue in
+                    displayedRotation = .degrees(bearing.update(newValue.degrees))
+                }
                 .accessibilityHidden(true)
 
             Text(value)
