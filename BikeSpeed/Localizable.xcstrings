@@ -1153,6 +1153,22 @@
         }
       }
     },
+    "Trips": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trips"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turer"
+          }
+        }
+      }
+    },
     "Units": {
       "localizations": {
         "en": {

@@ -72,23 +72,11 @@ struct ContentView: View {
 
                     Spacer()
 
-                    Button("Trip Log", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90") {
-                        isShowingTripLog = true
-                    }
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.secondary)
+                    TopControlCluster(
+                        onTripLog: { isShowingTripLog = true },
+                        onSettings: { isShowingSettings = true }
+                    )
                     .padding(12)
-                    .buttonStyle(.plain)
-
-                    Button("Settings", systemImage: "gearshape.fill") {
-                        isShowingSettings = true
-                    }
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.secondary)
-                    .padding(12)
-                    .buttonStyle(.plain)
                 }
                 Spacer()
             }
