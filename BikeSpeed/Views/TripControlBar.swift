@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TripControlBar: View {
     /// A plain property: an `@Observable` is tracked wherever its properties are read in a body, so it
-    /// needs no wrapper to stay live — only `@Bindable` (to write) or `@State` (to own) would.
+    /// needs no wrapper to stay live — only writing (`@Bindable`) or owning (`@State`) would.
     let tripManager: TripManager
     @Environment(TripDataStack.self) private var stack
 
@@ -82,11 +82,10 @@ struct TripControlBar: View {
         }
     }
 
-    /// An auto-paused trip has already stopped accumulating, so offering to "Pause" it reads as a
-    /// no-op next to a stats panel that says "Auto-paused". The button's action is unchanged — it
-    /// still calls `pause()` — but what that *does* here is take the pause off the app and hand it
-    /// to the rider, which is the end-of-ride gesture: Save unlocks the moment the pause is manual.
-    /// A Garmin labels the same button in the same state "Stop", for the same reason.
+    /// An auto-paused trip has already stopped accumulating, so "Pause" would read as a no-op next to
+    /// a panel saying "Auto-paused". The action still calls `pause()`, but here that takes the pause
+    /// off the app and hands it to the rider — the end-of-ride gesture, since Save unlocks the moment
+    /// the pause is manual. A Garmin labels the same button in the same state "Stop", for the same reason.
     private var primaryLabel: LocalizedStringKey {
         if tripManager.isAutoPaused { return "Stop" }
         switch tripManager.state {
@@ -112,21 +111,21 @@ struct TripControlBar: View {
         }
     }
 
-    /// **The reset comes after the write, not before it.** `reset()` throws away the only other copy of the
-    /// ride, and the confirmation alert tells the rider it is safe — so neither may happen until the store
-    /// says the trip is actually on disk. If the save fails, the trip is still paused and still theirs, and
-    /// tapping Save again retries it.
+    /// **Reset comes after the write, not before.** `reset()` throws away the only other copy of the
+    /// ride, and the confirmation alert says it's safe — so neither happens until the store says the
+    /// trip is on disk. If the save fails the trip is still paused and still theirs, and tapping Save
+    /// again retries.
     private func saveAction() {
         guard let entry = tripManager.makeLogEntry() else { return }
-        // The payloads travel alongside the entry rather than inside it — see `TripLogEntry` for why the trip
+        // Payloads travel alongside the entry, not inside it — see `TripLogEntry` for why the trip
         // list must never carry a ride's track.
         let profile = tripManager.altitudeProfile
         let route = tripManager.routeSamples
 
         Task {
             do {
-                // The encode is O(samples) and runs off the main actor; the insert lands on the main context,
-                // so the ride is in the trip list's `@Query` by the time this returns.
+                // Encode is O(samples) and runs off the main actor; the insert lands on the main
+                // context, so the ride is in the trip list's `@Query` by the time this returns.
                 try await stack.save(entry, altitudeProfile: profile, route: route)
                 tripManager.reset()
                 isShowingSavedConfirmation = true

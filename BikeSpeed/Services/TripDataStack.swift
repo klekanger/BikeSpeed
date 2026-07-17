@@ -2,12 +2,11 @@ import Foundation
 import Observation
 import SwiftData
 
-/// Owns the store and every seam a Pro tier will need to reach through. One object in the environment, so
+/// Owns the store and every seam a Pro tier will reach through. One object in the environment, so
 /// `TripControlBar`, `TripLogListView` and `TripLogDetailView` each depend on exactly one thing.
 ///
-/// This is what replaced `TripLogStore`. Note what is *not* here: any notion of an in-memory `entries`
-/// array, or an ordering the store has to maintain. The trip list is a `@Query`, which is live, sorted by
-/// the database, and never loads a row it does not draw.
+/// Replaced `TripLogStore`. Note what is *not* here: any in-memory `entries` array or ordering the store must
+/// maintain. The trip list is a `@Query` — live, sorted by the database, and never loading a row it doesn't draw.
 @MainActor
 @Observable
 final class TripDataStack {
@@ -26,16 +25,14 @@ final class TripDataStack {
 
     /// The one place a trip is written, called from `TripControlBar` at Save.
     ///
-    /// The encode is O(samples) and happens off the run loop. The insert is O(1) once the blobs are bytes,
-    /// and happens on the **main context** — so the new row is in the list's `@Query` the moment this
-    /// returns, with no reliance on a background context's save propagating. This is the one moment a user
-    /// is actively waiting to see their ride appear.
+    /// The encode is O(samples), off the run loop; the insert is on the **main context**, so the new row is in
+    /// the list's `@Query` the moment this returns — no reliance on a background save propagating, and this is
+    /// the one moment a user is actively watching for their ride to appear.
     ///
-    /// **Throws rather than swallowing.** The caller has just finished a ride and is about to be told it was
-    /// saved, and `TripManager.reset()` will throw the only other copy away. A `try?` here would mean a full
-    /// disk silently eats the ride *and* the app cheerfully confirms it — so the failure has to reach the
-    /// rider while their trip is still in memory to retry with. Same for the encodes: a track that fails to
-    /// encode must not quietly persist a trip with no track.
+    /// **Throws rather than swallowing.** `TripManager.reset()` throws away the only other copy, so a `try?`
+    /// would let a full disk silently eat the ride while the app confirms it saved. The failure has to reach
+    /// the rider while the trip is still in memory to retry. Same for the encodes: a track that fails to encode
+    /// must not quietly persist a trip with no track.
     func save(_ entry: TripLogEntry, altitudeProfile: [AltitudeSample], route: [RouteSample]) async throws {
         let payloads = try await Task.detached {
             (
@@ -56,20 +53,19 @@ final class TripDataStack {
         await sync.tripDidChange(entry.id)
     }
 
-    /// The one place a trip is removed — the swipe *and* the detail view's button, exactly as `TripLogStore`
-    /// kept a single private `delete(ids:)` for exactly this reason.
+    /// The one place a trip is removed — the swipe *and* the detail view's button, one path as `TripLogStore`
+    /// kept a single private `delete(ids:)`.
     ///
-    /// Deleting the row takes its external-storage blobs with it: Core Data owns their lifetime. There is no
-    /// second source of truth to fall out of step, and so no orphaned track to reap — the whole job
-    /// `TripLogStore.reapOrphanedRoutes()` existed to do simply has no subject any more.
+    /// Deleting the row takes its external-storage blobs with it: Core Data owns their lifetime, so there's no
+    /// second source of truth to fall out of step and no orphaned track to reap —
+    /// `TripLogStore.reapOrphanedRoutes()` has no subject any more.
     ///
-    /// **The soft-delete seam.** When sync ships, the `delete` below becomes
-    /// `trip.deletedAt = now; trip.updatedAt = now` — and nothing else changes, because
-    /// `TripLogListView`'s `@Query` already filters `deletedAt == nil`.
-    /// `async` purely so the sync notification is *awaited* rather than fired into a detached `Task`. The
-    /// delete itself is synchronous and complete before the first `await`. Firing and forgetting would leave
-    /// no way to observe that the engine was told — and a test that has to sleep to find out is a test that
-    /// will eventually lie.
+    /// **The soft-delete seam.** When sync ships, this becomes `trip.deletedAt = now; trip.updatedAt = now` and
+    /// nothing else changes, because `TripLogListView`'s `@Query` already filters `deletedAt == nil`.
+    ///
+    /// `async` purely so the sync notification is *awaited* rather than fired into a detached `Task`; the delete
+    /// itself is synchronous and complete before the first `await`. Fire-and-forget would leave no way to observe
+    /// the engine was told, and a test that has to sleep to find out will eventually lie.
     func delete(_ trips: [StoredTrip]) async {
         let ids = trips.map(\.id)
         for trip in trips {

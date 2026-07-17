@@ -2,23 +2,22 @@ import Foundation
 
 /// Moves the JSON trip log into SwiftData, once, and then removes it.
 ///
-/// Both the directory and the repository are injected, so a test drives this against a temp directory and an
-/// in-memory store and never goes near the real Application Support.
+/// Directory and repository are injected, so a test drives this against a temp directory and an in-memory
+/// store, never touching the real Application Support.
 ///
-/// **Idempotency is state, not a flag.** This runs whenever `TripLog.json` still exists; a successful import
-/// deletes it, so there is nothing left to re-run. No `UserDefaults` boolean that a restore-from-backup could
-/// reset while the JSON came back alongside it. A *partial* failure leaves the file, and the retry is safe
-/// because `TripRepository.insert` upserts on `id` — which is the only defence there is, since CloudKit
-/// forbids the `@Attribute(.unique)` that would otherwise reject a duplicate.
+/// **Idempotency is state, not a flag.** Runs whenever `TripLog.json` still exists; a successful import deletes
+/// it, so nothing is left to re-run — no `UserDefaults` boolean a restore-from-backup could reset while the
+/// JSON came back alongside it. A *partial* failure leaves the file, and the retry is safe because
+/// `TripRepository.insert` upserts on `id` — the only defence there is, since CloudKit forbids the
+/// `@Attribute(.unique)` that would reject a duplicate.
 nonisolated struct LegacyTripLogImporter {
 
-    /// **Frozen.** This is what the app wrote up to v1.1, and it must keep decoding for as long as anyone
-    /// might still have that file.
+    /// **Frozen.** What the app wrote up to v1.1; must keep decoding for as long as anyone might still have
+    /// that file.
     ///
-    /// It is a private type of the importer rather than the live `TripLogEntry` on purpose: the live entry
-    /// has since lost `altitudeProfile` to a payload blob, and if these were the same type that change would
-    /// have silently broken every existing user's import. A legacy format is a fact about the past; it does
-    /// not get to be refactored.
+    /// Private to the importer rather than the live `TripLogEntry` on purpose: the live entry has since lost
+    /// `altitudeProfile` to a payload blob, and sharing the type would have silently broken every existing
+    /// user's import. A legacy format is a fact about the past; it doesn't get refactored.
     private struct LegacyTripLogEntry: Decodable {
         let id: UUID
         let startDate: Date
@@ -32,12 +31,10 @@ nonisolated struct LegacyTripLogImporter {
     }
 
     enum ImportError: Error, Equatable {
-        /// The log exists but will not decode. **Nothing is deleted.**
-        ///
-        /// This is the single most important behaviour in this file. `TripLogStore.load()` used to do
-        /// `(try? decode(...)) ?? []`, and the next `persist()` would write that emptiness over the user's
-        /// history permanently. A log we cannot parse is a log we do not understand, and a log we do not
-        /// understand is a log we do not delete.
+        /// The log exists but will not decode. **Nothing is deleted** — the single most important behaviour in
+        /// this file. `TripLogStore.load()` used to do `(try? decode(...)) ?? []`, and the next `persist()`
+        /// would write that emptiness over the user's history permanently. A log we can't parse is one we don't
+        /// delete.
         case logIsUnreadable
         case verificationFailed(missing: [UUID])
     }
@@ -51,8 +48,8 @@ nonisolated struct LegacyTripLogImporter {
     let legacyDirectory: URL
     let repository: TripRepository
 
-    /// Where the JSON log lived: `Application Support/<bundle id>/`. Keyed off the bundle identifier exactly
-    /// as `TripLogStore.defaultFileURL()` was, so it finds the file the shipped app actually wrote.
+    /// Where the JSON log lived: `Application Support/<bundle id>/`. Keyed off the bundle id exactly as
+    /// `TripLogStore.defaultFileURL()` was, so it finds the file the shipped app wrote.
     static func applicationSupportDirectory() -> URL {
         let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return supportDir.appendingPathComponent(Bundle.main.bundleIdentifier ?? "BikeSpeed", isDirectory: true)
@@ -89,10 +86,9 @@ nonisolated struct LegacyTripLogImporter {
                 ),
                 altitudeData: profile.isEmpty ? nil : try TripPayloadCoder.encode(profile),
                 routeData: routeData,
-                // An imported trip has not been touched since it was ridden, so its last local mutation is
-                // when it was recorded — not the day it happened to be migrated. Otherwise a future sync
-                // would conclude the rider's entire back catalogue changed on the day they installed this
-                // update, and push all of it.
+                // An imported trip hasn't been touched since it was ridden, so its last local mutation is when
+                // it was recorded, not the migration day. Otherwise a future sync would conclude the rider's
+                // whole back catalogue changed on install day and push all of it.
                 updatedAt: entry.startDate
             )
         }
@@ -114,13 +110,13 @@ nonisolated struct LegacyTripLogImporter {
         return .imported(trips: importable.count, routes: routeSizes.count)
     }
 
-    /// Nil for a trip with no track — every trip saved before route recording shipped. A normal answer, not
-    /// an error, exactly as `RouteFileStore.load` treated it.
+    /// Nil for a trip with no track — every trip saved before route recording shipped. A normal answer, not an
+    /// error, as `RouteFileStore.load` treated it.
     ///
-    /// A route file that exists but will *not* decode is also treated as "no track", rather than failing the
-    /// whole import: the trip itself is intact, and a ride recorded without its map is far better than a
-    /// migration that refuses to run. That is the same judgement `RouteFileStore.save` already made. The
-    /// **log** is the opposite case — that is the user's entire history, and it is fatal.
+    /// A route file that exists but won't decode is also treated as "no track" rather than failing the whole
+    /// import: the trip is intact, and a ride without its map beats a migration that refuses to run (the same
+    /// judgement `RouteFileStore.save` made). The **log** is the opposite case — the user's entire history, and
+    /// fatal.
     private func routeBytes(for id: UUID) -> Data? {
         let url = routesDirectory.appendingPathComponent("\(id.uuidString).json")
         guard let data = try? Data(contentsOf: url),

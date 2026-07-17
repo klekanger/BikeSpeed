@@ -29,9 +29,8 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
 
     /// Center-of-gauge unit label, e.g. "KM/H" / "KM/T" / "MPH".
     ///
-    /// Not sourced from Foundation's locale-aware `Measurement` formatting: that produces "km/hr"
-    /// (English) and "mile/t" (Norwegian) for this unit via `MeasurementFormatter`, neither of which
-    /// matches the abbreviations riders expect, so the two supported languages are hardcoded instead.
+    /// Hardcoded rather than from `Measurement` formatting, which yields "km/hr" (English) and "mile/t"
+    /// (Norwegian) — neither the abbreviation riders expect.
     func gaugeUnitLabel(locale: Locale) -> String {
         let isNorwegian = locale.language.languageCode == Locale.LanguageCode("nb")
         switch self {
@@ -48,9 +47,8 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
 
     /// Formats speed as "<value> <unit>", e.g. "24.3 km/h" / "24,3 km/t" / "15.1 mph".
     ///
-    /// Builds the unit suffix from `gaugeUnitLabel` rather than `Measurement`'s locale-aware
-    /// formatting: the latter renders mph as "miles/t" in Norwegian, which isn't one of this app's
-    /// two supported unit labels (see `gaugeUnitLabel`'s doc comment for the metric equivalent).
+    /// Unit suffix comes from `gaugeUnitLabel`, not `Measurement`'s formatting (which renders mph as
+    /// "miles/t" in Norwegian) — see `gaugeUnitLabel`.
     func formattedSpeed(metersPerSecond: Double, fractionDigits: Int = 1, locale: Locale) -> String {
         formattedSpeedValue(speedValue(metersPerSecond: metersPerSecond), fractionDigits: fractionDigits, locale: locale)
     }
@@ -75,8 +73,7 @@ enum MeasurementSystem: String, CaseIterable, Identifiable {
     }
 
     /// Formats a gauge max speed stored canonically in km/h in this system's speed unit.
-    /// See `formattedSpeed` for why the unit suffix comes from `gaugeUnitLabel` rather than
-    /// `Measurement`'s own locale-aware formatting.
+    /// See `formattedSpeed` for why the unit suffix comes from `gaugeUnitLabel`.
     func formattedMaxGaugeSpeed(fromCanonicalKMH kmh: Double, fractionDigits: Int = 0, locale: Locale) -> String {
         formattedSpeedValue(maxGaugeSpeedValue(fromCanonicalKMH: kmh), fractionDigits: fractionDigits, locale: locale)
     }

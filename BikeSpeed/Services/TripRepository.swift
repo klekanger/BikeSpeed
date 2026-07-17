@@ -12,14 +12,13 @@ struct ImportableTrip: Sendable {
 
 /// The off-main-actor door into the store.
 ///
-/// Deliberately narrow. Only the two jobs that genuinely must not run on the run loop live here: reading a
-/// trip's payload blobs (a file read, then an O(samples) decode, then an O(samples) GPX render), and the
-/// one-shot legacy import (a bulk write of the user's entire history at launch).
+/// Deliberately narrow: only the two jobs that must not run on the run loop live here — reading a trip's
+/// payload blobs (file read, O(samples) decode, O(samples) GPX render) and the one-shot legacy import (a bulk
+/// write of the user's whole history at launch).
 ///
-/// Everything else — the list's `@Query`, saving a finished trip, deleting one — runs on the main context
-/// via `TripDataStack`. That is not laziness. It keeps the two paths the user is actively *watching* free of
-/// any dependence on SwiftData propagating a background context's save into the main one, which is
-/// historically the framework's flakiest corner.
+/// Everything else — the list's `@Query`, saving a finished trip, deleting one — runs on the main context via
+/// `TripDataStack`, keeping the paths the user is actively *watching* free of any dependence on SwiftData
+/// propagating a background save into the main context, historically the framework's flakiest corner.
 @ModelActor
 actor TripRepository {
 
@@ -43,7 +42,7 @@ actor TripRepository {
     }
 
     /// The ids already in the store — the importer's dedupe key. CloudKit forbids `@Attribute(.unique)`, so
-    /// there is no database-level collision to lean on and the check has to be explicit.
+    /// there's no database-level collision to lean on; the check has to be explicit.
     func existingIDs() throws -> Set<UUID> {
         var descriptor = FetchDescriptor<StoredTrip>()
         descriptor.propertiesToFetch = [\.id]
@@ -68,9 +67,9 @@ actor TripRepository {
         return fresh.map(\.entry.id)
     }
 
-    /// Post-import verification: which of these trips are actually in the store, and how many bytes of track
-    /// each one carries. The importer compares this against what it read off disk *before* it deletes
-    /// anything — it verifies from the store, not from what it believes it wrote.
+    /// Post-import verification: which of these trips made it into the store, and how many bytes of track each
+    /// carries. The importer compares this against what it read off disk before deleting anything — verifying
+    /// from the store, not from what it believes it wrote.
     func routeByteCounts(for ids: [UUID]) throws -> [UUID: Int] {
         let descriptor = FetchDescriptor<StoredTrip>(predicate: #Predicate { ids.contains($0.id) })
         return try modelContext.fetch(descriptor).reduce(into: [:]) { counts, trip in

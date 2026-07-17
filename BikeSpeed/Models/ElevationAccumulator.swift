@@ -2,20 +2,19 @@ import Foundation
 
 /// Turns a stream of altitude readings into total ascent and descent, through a deadband.
 ///
-/// Naively summing positive deltas manufactures hundreds of phantom metres an hour out of sensor
-/// noise. Instead every reading is measured against an anchor that only moves when the difference
-/// crosses `deadband`: noise oscillating inside the band cancels against a fixed point and adds
-/// nothing, while a real climb — however slowly it accumulates — eventually crosses the band, is
-/// banked in full, and re-anchors for the next step.
+/// Naively summing positive deltas manufactures hundreds of phantom metres an hour out of sensor noise.
+/// Instead each reading is measured against an anchor that moves only when the difference crosses `deadband`:
+/// noise oscillating inside the band cancels against the fixed point, while a real climb — however slowly it
+/// accumulates — eventually crosses the band, is banked in full, and re-anchors.
 struct ElevationAccumulator {
-    /// How far altitude must move from the anchor before it is believed. Sized to the source's
-    /// noise: ~1 m suits the barometer, ~3 m the much noisier GPS fallback.
+    /// How far altitude must move from the anchor before it's believed. Sized to the source's noise:
+    /// ~1 m for the barometer, ~3 m for the much noisier GPS fallback.
     let deadband: Double
 
     private(set) var ascent: Double = 0 // meters
     private(set) var descent: Double = 0 // meters, positive
-    /// Distinguishes "a flat trip" (zero ascent) from "no altitude data ever arrived" (nothing to
-    /// report) — the saved log entry stores nil for the latter, not a misleading 0.
+    /// Distinguishes a flat trip (zero ascent) from no altitude data ever arriving — the saved log entry
+    /// stores nil for the latter, not a misleading 0.
     private(set) var hasRecordedAltitude = false
 
     private var anchor: Double?
@@ -40,12 +39,11 @@ struct ElevationAccumulator {
         }
     }
 
-    /// Forgets the reference point but keeps the totals. For breaks in sampling — a pause, a long
-    /// standstill, a stopped-and-restarted barometer — where the readings on either side of the gap
-    /// aren't comparable: whatever altitude did in between wasn't ridden, so the next reading
-    /// anchors fresh instead of banking the difference as climb. `hasRecordedAltitude` deliberately
-    /// survives (and is stored rather than derived from the anchor for exactly this reason): data
-    /// did arrive, the trip merely re-baselined.
+    /// Forgets the reference point but keeps the totals. For breaks in sampling — a pause, a long standstill,
+    /// a stopped-and-restarted barometer — where readings across the gap aren't comparable: whatever altitude
+    /// did in between wasn't ridden, so the next reading anchors fresh instead of banking the difference as
+    /// climb. `hasRecordedAltitude` deliberately survives (and is stored, not derived from the anchor, for
+    /// this reason): data did arrive, the trip merely re-baselined.
     mutating func reanchor() {
         anchor = nil
     }

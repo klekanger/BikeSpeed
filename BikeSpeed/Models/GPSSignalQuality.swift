@@ -8,9 +8,9 @@ enum GPSSignalQuality: Equatable {
     case fair
     case poor
 
-    /// Buckets a horizontal accuracy (meters; negative means "invalid" per CoreLocation) into a
-    /// quality level. `good` and `max` are the upper accuracy bounds (in meters) for the green and
-    /// yellow bands respectively; anything worse than `max`, or invalid, is `.poor`.
+    /// Buckets a horizontal accuracy (meters; negative is CoreLocation's "invalid") into a quality level.
+    /// `good` and `max` are the upper accuracy bounds for the green and yellow bands; anything worse than
+    /// `max`, or invalid, is `.poor`.
     init(horizontalAccuracy: CLLocationAccuracy, goodWithin good: CLLocationAccuracy, acceptableWithin max: CLLocationAccuracy) {
         if horizontalAccuracy < 0 || horizontalAccuracy > max {
             self = .poor

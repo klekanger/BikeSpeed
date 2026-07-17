@@ -1,31 +1,29 @@
 import SwiftUI
 
-/// One cell of the 2×2 stats grid: an SF Symbol on top with a value and a small caption below,
-/// matching the "icon, then data" layout of the old stat rows. A cell with more than one readout
-/// (e.g. average↔max speed, altitude↔GPS position) is paged through by tapping or swiping it, and
+/// One cell of the 2×2 stats grid: an SF Symbol on top, then a value and small caption. A cell with
+/// more than one readout (average↔max speed, altitude↔GPS position) is paged by tap or swipe, and
 /// says so with a page indicator.
 struct StatCell: View {
     /// What the caption line under the value displays.
     enum Caption {
         /// The stat's own name — "Distance", "Altitude". The default for most cells.
         case name
-        /// Live data in place of the name, as the direction cell shows the street being ridden.
-        /// Nil renders a blank line rather than no line, so the cell stays vertically aligned with
-        /// its neighbours in the grid until the data resolves.
+        /// Live data in place of the name, as the direction cell shows the street being ridden. Nil
+        /// renders a blank line, not no line, so the cell stays vertically aligned until data resolves.
         case data(String?)
         /// A fixed catalog string in place of the name, as the distance cell shows "Auto-paused".
-        /// Unlike `.data` this stays a `LocalizedStringKey`, so SwiftUI resolves it against the
-        /// in-app language override — no manual bundle lookup on every render.
+        /// Stays a `LocalizedStringKey` (unlike `.data`) so SwiftUI resolves it against the in-app
+        /// language override — no manual bundle lookup per render.
         case text(LocalizedStringKey)
     }
 
-    /// A cell the user can page through. Nil on a single-readout cell — the direction cell — which
-    /// is then neither interactive nor marked with a page indicator. That absence is the whole
-    /// signal: dots mean "there is more here", so a cell without them must have nothing to show.
+    /// A cell the user can page through. Nil on a single-readout cell (the direction cell), which is
+    /// then neither interactive nor marked with a page indicator — the absence is the whole signal:
+    /// dots mean "there is more here".
     struct Paging {
         let page: Binding<Int>
-        /// Every readout's name, in page order. The single source of the dot count, the caption
-        /// line, the VoiceOver label and the hint, so no call site has to name a readout twice.
+        /// Every readout's name, in page order. Single source of the dot count, caption line,
+        /// VoiceOver label and hint, so no call site names a readout twice.
         let names: [LocalizedStringKey]
 
         var currentName: LocalizedStringKey { names[page.wrappedValue] }
@@ -34,24 +32,24 @@ struct StatCell: View {
 
     let systemImage: String
     let value: String
-    /// The stat's name, for a cell with a single readout. A paging cell leaves this nil and takes
-    /// its name from the page it's showing instead.
+    /// The stat's name, for a single-readout cell. A paging cell leaves this nil and takes its name
+    /// from the page it's showing.
     var caption: LocalizedStringKey?
     var captionContent: Caption = .name
-    /// Rotation applied to the icon — used by the direction cell to point the arrow at the GPS
-    /// course; `.zero` (the default) leaves ordinary stat icons upright.
+    /// Icon rotation — the direction cell points the arrow at the GPS course; `.zero` (default)
+    /// leaves ordinary stat icons upright.
     var iconRotation: Angle = .zero
     var iconTint: Color = .orange
     var paging: Paging?
     /// How far the page indicator sits above the cell's bottom edge. A cell whose bottom edge is
-    /// covered by something — the panel's bezel is drawn over its outer 5pt — passes more, so its
-    /// dots stand as far clear of that as everyone else's stand clear of a bare edge.
+    /// covered — the panel's bezel is drawn over its outer 5pt — passes more, so its dots stand as
+    /// clear of the bezel as everyone else's stand clear of a bare edge.
     var pageIndicatorInset: CGFloat = StatCell.defaultPageIndicatorInset
 
     static let defaultPageIndicatorInset: CGFloat = 8
 
-    /// The gestures, the haptic and the activation action hang off the paging branch alone, so a
-    /// single-readout cell neither swallows a tap nor tells VoiceOver it can be activated.
+    /// Gestures, haptic and activation action hang off the paging branch alone, so a single-readout
+    /// cell neither swallows a tap nor tells VoiceOver it can be activated.
     @ViewBuilder var body: some View {
         if let paging {
             readout
@@ -112,9 +110,8 @@ struct StatCell: View {
         .overlay(alignment: .bottom) { pageIndicator }
     }
 
-    /// A value that breaks across two lines — the GPS position, which is the one readout built with
-    /// a newline in it — fills the cell top to bottom and crowds the caption under it. Two lines of
-    /// this are still wider than any one-line readout, so it shrinks rather than the cell growing.
+    /// A two-line value (the GPS position, the one readout with a newline) crowds the caption under
+    /// it, and is still wider than any one-line readout, so it shrinks rather than growing the cell.
     private var valueFontSize: CGFloat {
         value.contains("\n") ? 16 : 20
     }
@@ -153,9 +150,9 @@ struct StatCell: View {
         }
     }
 
-    /// VoiceOver reads the label ("Direction of travel") plus this. A resolved caption is worth
-    /// announcing, so it joins the value: "N, Storgata" / "0:45, Auto-paused". A `Text` rather than
-    /// a `String` so the `.text` case can stay a `LocalizedStringKey` for SwiftUI to resolve.
+    /// VoiceOver reads the label ("Direction of travel") plus this: the value, with a resolved
+    /// caption joined on — "N, Storgata" / "0:45, Auto-paused". A `Text` not a `String` so the
+    /// `.text` case can stay a `LocalizedStringKey` for SwiftUI to resolve.
     private var accessibilityValue: Text {
         switch captionContent {
         case .name:

@@ -2,15 +2,15 @@ import CoreLocation
 import SwiftData
 import SwiftUI
 
-/// Sheet-presented list of saved trips, newest first, under the rider's lifetime totals and personal bests
-/// (see `TripLogSummary`). Each row shows only a few details (date, distance, duration); tapping a row
-/// pushes to `TripLogDetailView` for the full breakdown.
+/// Sheet-presented list of saved trips, newest first, under the rider's lifetime totals and personal
+/// bests (see `TripLogSummary`). Each row shows a few details (date, distance, duration); tapping
+/// pushes to `TripLogDetailView`.
 struct TripLogListView: View {
-    /// Live, sorted by the database, and it never loads a row it does not draw. The old store re-published
-    /// an entire in-memory array on every change; this re-runs when a row actually changes.
+    /// Live, database-sorted, and never loads a row it doesn't draw. The old store re-published a whole
+    /// in-memory array on every change; this re-runs only when a row actually changes.
     ///
-    /// The `deletedAt` filter is a no-op today — nothing writes that field. It is here so that the day
-    /// `TripDataStack.delete` starts soft-deleting for sync, this view does not have to change at all.
+    /// The `deletedAt` filter is a no-op today — nothing writes that field — but is here so that when
+    /// `TripDataStack.delete` starts soft-deleting for sync, this view needn't change at all.
     @Query(
         filter: #Predicate<StoredTrip> { $0.deletedAt == nil },
         sort: \StoredTrip.startDate,
@@ -30,10 +30,10 @@ struct TripLogListView: View {
                     ContentUnavailableView("No trips logged yet", systemImage: "list.bullet.clipboard")
                 } else {
                     List {
-                        // Its own view, not a `@ViewBuilder` helper here, so its body — which reduces the
-                        // whole log eight times over (three period totals, four personal bests) — is skipped
-                        // whenever the query hasn't actually changed, instead of re-running on every locale
-                        // change, sheet toggle and delete animation.
+                        // Its own view, not a `@ViewBuilder` helper: its body reduces the whole log
+                        // eight times over (three period totals, four personal bests), so as a view
+                        // it's skipped when the query hasn't changed instead of re-running on every
+                        // locale change, sheet toggle and delete animation.
                         TripLogSummarySection(trips: trips)
 
                         Section {
@@ -51,7 +51,7 @@ struct TripLogListView: View {
                 }
             }
             .navigationDestination(for: StoredTrip.self) { trip in
-                // The value snapshot is taken *here*, while the row is still alive. The detail view must not
+                // Value snapshot taken *here*, while the row is still alive. The detail view must not
                 // read the model in its body — deleting from there would destroy it mid-pop.
                 TripLogDetailView(trip: trip, entry: trip.entry)
             }

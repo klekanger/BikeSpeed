@@ -9,11 +9,10 @@ struct TripLogDetailView: View {
     /// The row, used only to load the payloads and to delete it. **Never read in `body`** — see `entry`.
     let trip: StoredTrip
 
-    /// The scalars, snapshotted as a value by the caller. The body reads *this*, not `trip`.
-    ///
-    /// Deleting a trip from here invalidates the `StoredTrip` the moment the context saves, while this view is
-    /// still mounted through the pop animation — and a body that observed the model would be re-evaluated
-    /// against a destroyed instance and trap. A value cannot be destroyed out from under a view.
+    /// The scalars, snapshotted as a value by the caller. The body reads *this*, not `trip`: deleting
+    /// invalidates the `StoredTrip` the moment the context saves, while this view is still mounted
+    /// through the pop animation, and a body observing the model would re-evaluate against a destroyed
+    /// instance and trap. A value can't be destroyed out from under a view.
     let entry: TripLogEntry
 
     @Environment(TripDataStack.self) private var stack
@@ -22,24 +21,24 @@ struct TripLogDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isShowingDeleteConfirmation = false
-    /// Loaded in `.task`, not read off `trip` in the body. Both payloads are external-storage blobs, and
-    /// touching either one on this actor would fault the file in and decode it on the run loop — which is
-    /// precisely the cost the trip *list* is built never to pay. Nil while loading.
+    /// Loaded in `.task`, not read off `trip` in the body: both payloads are external-storage blobs,
+    /// and touching either on this actor would fault the file in and decode it on the run loop — the
+    /// cost the trip *list* is built never to pay. Nil while loading.
     @State private var loaded: Loaded?
 
-    /// The trip's decoded payloads, plus everything the Route section and the share sheet derive from them —
-    /// computed **once**, when they load. `Map(initialPosition:)` consults its rect exactly once, at first
-    /// creation, so recomputing the bounding box in the view builder would redo an O(samples) pass on every
-    /// re-render — every delete-confirmation toggle, every environment change — and throw it away each time.
+    /// The decoded payloads plus everything the Route section and share sheet derive from them,
+    /// computed **once** at load. `Map(initialPosition:)` consults its rect only at first creation,
+    /// so recomputing the bounding box in the view builder would redo an O(samples) pass on every
+    /// re-render (delete-confirmation toggle, environment change) and throw it away each time.
     private struct Loaded {
-        /// Empty for a trip recorded without usable altitude — including every trip saved before elevation
-        /// shipped.
+        /// Empty for a trip recorded without usable altitude — including everything saved before
+        /// elevation shipped.
         let profile: [AltitudeSample]
-        /// Empty for a trip with no track — every trip saved before route recording shipped.
+        /// Empty for a trip with no track — everything saved before route recording shipped.
         let coordinates: [CLLocationCoordinate2D]
         let cameraRect: MKMapRect
-        /// The GPX backing the share sheet. `ShareLink` needs a URL that already exists, so it cannot be
-        /// built lazily at tap time.
+        /// The GPX backing the share sheet. `ShareLink` needs a URL that already exists, so it can't
+        /// be built lazily at tap time.
         let gpxFileURL: URL?
     }
 
@@ -51,8 +50,8 @@ struct TripLogDetailView: View {
                 LabeledContent("Distance", value: settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale))
                 LabeledContent("Average speed", value: settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.averageSpeed, locale: locale))
                 LabeledContent("Max speed", value: settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.maxSpeed, locale: locale))
-                // Absent, not zero, on trips recorded without altitude data (including anything
-                // saved before v2) — a row reading "0 m" would claim the ride was flat.
+                // Absent, not zero, on trips recorded without altitude data (including anything saved
+                // before v2) — a "0 m" row would claim the ride was flat.
                 if let totalAscent = entry.totalAscent {
                     LabeledContent("Total ascent", value: settingsStore.measurementSystem.formattedAltitude(meters: totalAscent, locale: locale))
                 }
@@ -90,8 +89,8 @@ struct TripLogDetailView: View {
                         .frame(height: 200)
                     }
                 } else {
-                    // The payloads are still decoding. Saying "no altitude data" here would be a lie that
-                    // corrects itself a frame later, which reads as a flicker.
+                    // Payloads still decoding. "No altitude data" here would be a lie that corrects
+                    // itself a frame later, reading as a flicker.
                     ProgressView()
                         .frame(maxWidth: .infinity)
                 }
@@ -102,23 +101,23 @@ struct TripLogDetailView: View {
         .task {
             let id = entry.id
             let repository = stack.repository // an actor reference; Sendable
-            // Resolved here, on the main actor, so it can see the environment locale: `Date.formatted()`
-            // without one follows the *device* language, not the in-app override (see `AppLanguage`).
+            // Resolved on the main actor so it sees the environment locale: `Date.formatted()` without
+            // one follows the *device* language, not the in-app override (see `AppLanguage`).
             let trackName = entry.startDate.formatted(
                 Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale)
             )
             let fileName = "BikeSpeed-\(Self.fileNameDateFormatter.string(from: entry.startDate))"
 
-            // The fetch reads only the two blob columns (`propertiesToFetch`), off the main actor, and hands
-            // back bytes — a `@Model` could not cross this boundary and does not need to.
+            // Reads only the two blob columns (`propertiesToFetch`), off the main actor, handing back
+            // bytes — a `@Model` could not cross this boundary and doesn't need to.
             let payloads = try? await repository.payloads(for: id)
             let altitudeData = payloads?.altitudeData
             let routeData = payloads?.routeData
 
-            // Still `Task.detached`, and it has to be. With `SWIFT_APPROACHABLE_CONCURRENCY = YES`, a plain
-            // `nonisolated async` function runs on its *caller's* executor — the main actor, here — so
-            // "just await it" would put this O(samples) decode and the GPX render straight back on the run
-            // loop, with no compiler complaint and no failing test to catch it.
+            // `Task.detached`, and it has to be. With `SWIFT_APPROACHABLE_CONCURRENCY = YES` a plain
+            // `nonisolated async` function runs on its *caller's* executor — the main actor here — so
+            // "just await it" would put this O(samples) decode and the GPX render back on the run loop,
+            // with no compiler complaint and no failing test to catch it.
             let prepared = await Task.detached { () -> Loaded in
                 let profile = altitudeData
                     .flatMap { try? TripPayloadCoder.decode([AltitudeSample].self, from: $0) } ?? []
@@ -178,9 +177,9 @@ struct TripLogDetailView: View {
         }
     }
 
-    /// The track, framed to itself. Interaction is off deliberately: this map lives inside a `Form`, and
-    /// a pannable map there swallows the vertical drag the user meant for the page — the ride is being
-    /// looked at, not explored, and the GPX export is there for anyone who wants to do more with it.
+    /// The track, framed to itself. Interaction is off deliberately: inside a `Form` a pannable map
+    /// swallows the vertical drag meant for the page — the ride is being looked at, not explored, and
+    /// the GPX export is there for anyone who wants more.
     private func routeMap(for track: Loaded) -> some View {
         Map(initialPosition: .rect(track.cameraRect), interactionModes: []) {
             MapPolyline(coordinates: track.coordinates)
@@ -196,12 +195,11 @@ struct TripLogDetailView: View {
         }
     }
 
-    /// The camera rect for a track: its bounding box, padded so the polyline doesn't run along the edge
-    /// of the frame. The padding has a floor in *metres* because a ride can be perfectly straight — a due
-    /// north commute has a bounding box zero wide, and a purely proportional inset of zero would leave the
-    /// camera on a degenerate rect.
-    /// `nonisolated` so it can run inside the `Task.detached` above: it is an O(samples) pass, which is
-    /// precisely the kind of work that must not land on the run loop.
+    /// A track's bounding box, padded so the polyline doesn't run along the frame edge. The padding
+    /// floors in *metres* because a ride can be perfectly straight — a due-north commute has a
+    /// zero-wide box, and a purely proportional inset of zero would leave the camera on a degenerate
+    /// rect. `nonisolated` to run inside the `Task.detached` above: an O(samples) pass must not land
+    /// on the run loop.
     private nonisolated static func boundingRect(of coordinates: [CLLocationCoordinate2D]) -> MKMapRect {
         let rect = coordinates.reduce(MKMapRect.null) { rect, coordinate in
             let point = MKMapPoint(coordinate)
@@ -215,8 +213,8 @@ struct TripLogDetailView: View {
         return rect.insetBy(dx: -max(padding, minimumPadding), dy: -max(padding, minimumPadding))
     }
 
-    /// Fixed format on purpose — this names a file, so it has to be stable and sortable rather than
-    /// localized. The *track name* inside the GPX is the one a human reads, and that one is localized.
+    /// Fixed format on purpose — this names a file, so it must be stable and sortable, not localized.
+    /// The *track name* inside the GPX is the human-readable one, and that is localized.
     private static let fileNameDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

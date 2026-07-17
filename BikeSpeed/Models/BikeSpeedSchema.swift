@@ -22,15 +22,14 @@ enum BikeSpeedMigrationPlan: SchemaMigrationPlan {
 nonisolated enum TripModelContainer {
     static var schema: Schema { Schema(versionedSchema: BikeSpeedSchemaV1.self) }
 
-    /// The CloudKit container every rider's trips mirror to — private database, so a trip follows the
-    /// user's iCloud account across their devices and nobody else's.
+    /// The CloudKit container every rider's trips mirror to — private database, so a trip follows the user's
+    /// iCloud account across their devices and nobody else's.
     ///
-    /// **Derived from the bundle id, never hardcoded.** `BikeSpeed.entitlements` names the same container as
-    /// `iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)`, which Xcode expands to `iCloud.<bundle id>` at build time; this
-    /// computes the identical string at runtime from `Bundle.main.bundleIdentifier`. So the two can never
-    /// drift, and anyone forking this open-source app gets a working container by changing only their team
-    /// and bundle id — there is no `lekanger`-specific string to hunt down. See the README's "Running your
-    /// own copy".
+    /// **Derived from the bundle id, never hardcoded.** `BikeSpeed.entitlements` names the container as
+    /// `iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)`, which Xcode expands to `iCloud.<bundle id>`; this computes the
+    /// identical string at runtime from `Bundle.main.bundleIdentifier`, so the two can't drift. A fork gets a
+    /// working container by changing only its team and bundle id — no `lekanger`-specific string to hunt down.
+    /// See the README's "Running your own copy".
     static let cloudKitContainerID: String = {
         guard let bundleID = Bundle.main.bundleIdentifier else {
             preconditionFailure("No bundle identifier — cannot derive the CloudKit container id")
@@ -40,13 +39,9 @@ nonisolated enum TripModelContainer {
 
     /// The app's real store, mirrored to the user's private iCloud database.
     ///
-    /// Enabling sync was exactly what `StoredTrip` was shaped for: `cloudKitDatabase:` here plus the
-    /// entitlements file, no code and no migration, because the model satisfies the CloudKit mirroring
-    /// rules from day one. Passing a `cloudKitDatabase` hands the store to `NSPersistentCloudKitContainer`,
-    /// which still opens the **local** store when the user is signed out of iCloud — mirroring just stays
-    /// dormant until an account appears — so this does not throw for the no-account case. The only new way
-    /// it throws is genuine misprovisioning (wrong/missing entitlement, an unprovisioned container id),
-    /// which is a build defect and correctly fatal at the call site.
+    /// `NSPersistentCloudKitContainer` still opens the local store when the user is signed out — mirroring
+    /// stays dormant until an account appears — so this doesn't throw for the no-account case. It throws
+    /// only on genuine misprovisioning (missing entitlement, unprovisioned container id), a fatal build defect.
     static func app() throws -> ModelContainer {
         let schema = schema
         return try ModelContainer(
@@ -60,9 +55,9 @@ nonisolated enum TripModelContainer {
         )
     }
 
-    /// For tests and previews. `isStoredInMemoryOnly` is what makes the suite safe under Swift Testing's
-    /// parallel execution: every test gets its own store with no file to collide over — the property the old
-    /// `TripLogStoreTests` had to buy with a per-test temp directory.
+    /// For tests and previews. `isStoredInMemoryOnly` makes the suite safe under Swift Testing's parallel
+    /// execution: every test gets its own store with no file to collide over — what the old `TripLogStoreTests`
+    /// had to buy with a per-test temp directory.
     static func inMemory() throws -> ModelContainer {
         let schema = schema
         return try ModelContainer(

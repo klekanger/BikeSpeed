@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// Top-left GPS signal indicator: a location glyph tinted green (good), yellow (fair), or red
-/// (poor). A poor signal shows the crossed-out glyph, since in that state speed and distance are
-/// frozen (see `LocationManager`). While a trip is running, the glyph pulses slowly and a
-/// "Logging" label appears to its right.
+/// Top-left GPS signal indicator: a location glyph tinted green (good), yellow (fair), or red (poor).
+/// Poor shows the crossed-out glyph, since in that state speed and distance are frozen (see
+/// `LocationManager`). While a trip runs, the glyph pulses slowly with a "Logging" label to its right.
 struct GPSSignalIndicatorView: View {
     let quality: GPSSignalQuality
     let isTracking: Bool
@@ -36,10 +35,9 @@ struct GPSSignalIndicatorView: View {
         .accessibilityValue(accessibilityValue)
     }
 
-    // `.repeatForever` animations run on the rendered layer rather than being driven by
-    // `isPulsing`'s value, so simply setting `isPulsing = false` doesn't reliably cancel an
-    // in-flight repeat. Driving each half-cycle explicitly from a cancellable Task means
-    // stopping is just "don't schedule the next step" instead of racing a running animation.
+    // `.repeatForever` runs on the rendered layer, not driven by `isPulsing`'s value, so setting
+    // `isPulsing = false` doesn't reliably cancel an in-flight repeat. Driving each half-cycle from a
+    // cancellable Task makes stopping just "don't schedule the next step" instead of racing an animation.
     private func updatePulse() {
         pulseTask?.cancel()
         guard isTracking else {

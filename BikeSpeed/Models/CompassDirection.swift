@@ -13,8 +13,8 @@ enum CompassDirection: Int, CaseIterable {
 
     /// Norwegian differs on the east/west axis: Ø (øst) and V (vest) replace E and W.
     ///
-    /// Resolved through `AppLanguage` rather than `String(localized:)` so the in-app language
-    /// override is honored — see `AppLanguage.localizedString(forKey:)` for why that's necessary.
+    /// Resolved through `AppLanguage`, not `String(localized:)`, so the in-app language override is honored —
+    /// see `AppLanguage.localizedString(forKey:)`.
     func abbreviation(language: AppLanguage) -> String {
         language.localizedString(forKey: englishAbbreviation)
     }

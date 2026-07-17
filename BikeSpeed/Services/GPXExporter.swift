@@ -1,28 +1,24 @@
 import Foundation
 
-/// Renders a recorded track as GPX 1.1 — the interchange format every other cycling app reads, so a
-/// trip saved here can still be pushed to Strava or Komoot. Writing it is the whole feature; there is
-/// no import, no sync, and nothing to maintain against someone else's API.
+/// Renders a recorded track as GPX 1.1 — the interchange format every other cycling app reads, so a trip can
+/// be pushed to Strava or Komoot. Writing it is the whole feature: no import, no sync, nothing to maintain
+/// against someone else's API.
 ///
-/// `nonisolated` because the project's `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` would otherwise pin
-/// these to the main actor, and rendering a few thousand `<trkpt>` elements into a string and writing
-/// them to disk is exactly the work that must not happen on the run loop. Nothing here is shared state,
-/// so there is nothing to isolate.
+/// `nonisolated` because `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` would otherwise pin these to the main
+/// actor, and rendering a few thousand `<trkpt>` elements and writing them to disk must not happen on the run
+/// loop. Nothing here is shared state, so there's nothing to isolate.
 nonisolated enum GPXExporter {
 
-    /// Coordinates are formatted through `String(format:)`, which is **not** locale-aware — it always
-    /// emits a `.` decimal separator. That is load-bearing, not incidental: a `NumberFormatter` on a
-    /// comma-decimal locale (nb_NO, the app's other language) would write `lat="59,9139000"`, which is
-    /// not valid GPX, and every export would be silently rejected by every app the rider tried to open
-    /// it in. `GPXExporterTests` pins the separator for exactly this reason — don't swap this for a
-    /// formatter.
+    /// `String(format:)` is **not** locale-aware — it always emits a `.` decimal separator, and that's
+    /// load-bearing: a `NumberFormatter` on a comma-decimal locale (nb_NO, the app's other language) would
+    /// write `lat="59,9139000"`, invalid GPX that every app would silently reject. `GPXExporterTests` pins the
+    /// separator — don't swap this for a formatter.
     private static func decimal(_ value: Double, places: Int) -> String {
         String(format: "%.\(places)f", value)
     }
 
-    /// Builds the GPX document. An empty route yields a valid file with an empty track segment rather
-    /// than nothing at all — the caller may still want to share it, and a malformed file is worse than
-    /// an empty one.
+    /// Builds the GPX document. An empty route yields a valid file with an empty track segment — the caller may
+    /// still want to share it, and a malformed file is worse than an empty one.
     static func makeGPX(route: [RouteSample], trackName: String) -> String {
         let timestamps = ISO8601DateFormatter()
         timestamps.formatOptions = [.withInternetDateTime]
@@ -61,18 +57,17 @@ nonisolated enum GPXExporter {
         FileManager.default.temporaryDirectory.appendingPathComponent("GPXExports", isDirectory: true)
     }
 
-    /// One directory per trip. The rider sees the *file* name in the share sheet, so it stays a clean,
-    /// sortable date — but a date to the minute is not unique (a trip need only be 5 s and 10 m to be
-    /// saveable, so two can start within the same minute), and two trips exporting to one path would
-    /// leave a share sheet handing over the wrong ride's track. The trip's id disambiguates the
-    /// directory instead of uglifying the file name.
+    /// One directory per trip. The rider sees the *file* name in the share sheet, so it stays a clean, sortable
+    /// date — but a date to the minute isn't unique (a trip need only be 5 s and 10 m to save, so two can start
+    /// in the same minute), and two trips sharing one path would hand the share sheet the wrong ride's track.
+    /// The trip's id disambiguates the directory instead of uglifying the file name.
     static func exportsDirectory(forTrip id: UUID) -> URL {
         exportsDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
     }
 
-    /// Call once at launch. iOS reaps `tmp/` only under storage pressure, never while the app runs, so
-    /// without this every visit to a trip's detail view would leave another `.gpx` behind for the life of
-    /// the install. Launch is the safe moment: no share sheet can still be reading a file.
+    /// Call once at launch. iOS reaps `tmp/` only under storage pressure, never while the app runs, so without
+    /// this every detail-view visit leaves another `.gpx` behind for the life of the install. Launch is safe:
+    /// no share sheet can still be reading a file.
     static func clearExports() {
         try? FileManager.default.removeItem(at: exportsDirectory)
     }

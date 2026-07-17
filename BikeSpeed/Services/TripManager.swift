@@ -12,7 +12,7 @@ final class TripManager {
     private(set) var state: TripState = .idle
     private(set) var accumulatedDistance: CLLocationDistance = 0 // meters
     private(set) var elapsedActiveDuration: TimeInterval = 0
-    private(set) var maxSpeed: CLLocationSpeed = 0 // m/s, top instantaneous speed seen while running
+    private(set) var maxSpeed: CLLocationSpeed = 0 // m/s, instantaneous
 
     /// Nil until any usable altitude has been sampled: "no data" must stay distinguishable from "a
     /// flat ride" in the live UI just as it is in the saved log (see `TripLogEntry`).
@@ -22,29 +22,27 @@ final class TripManager {
     /// has been ridden to measure one honestly; see `GradeCalculator`.
     private(set) var currentGrade: Double?
 
-    /// Whether a running trip has stopped accumulating because the rider is standing still. This is
-    /// deliberately a flag on `.running` rather than a `TripState` case: a manual pause must stay
-    /// distinguishable from an auto-pause (otherwise rolling forward would resume a trip the user
-    /// paused on purpose), and `canSaveTrip` must not offer to save at every red light.
+    /// A running trip stopped accumulating because the rider is standing still. Deliberately a flag on
+    /// `.running`, not a `TripState` case: a manual pause must stay distinguishable from an auto-pause
+    /// (else rolling forward resumes a deliberately-paused trip), and `canSaveTrip` must not light up
+    /// at every red light.
     private(set) var isAutoPaused = false
 
     private var accumulatedActiveDuration: TimeInterval = 0
     private var activeStart: Date?
     private var previousLocation: CLLocation?
-    /// Retained so the trip can call back into it: background location updates are requested for
-    /// exactly the span of a recording — on at `start()`/`resume()`, off at `pause()`/`reset()`.
-    /// An auto-pause deliberately does *not* release them: its only exit is a fix above the resume
-    /// threshold, which can never arrive under a locked screen once GPS has been let go.
+    /// Background location updates run for exactly the span of a recording — on at `start()`/`resume()`,
+    /// off at `pause()`/`reset()`. An auto-pause deliberately keeps them: its only exit is a fix above
+    /// the resume threshold, which can never arrive under a locked screen once GPS is released.
     private let locationSource: any LocationSource
     @ObservationIgnored private var cancellable: AnyCancellable?
-    /// The wall clock, injected. Everything here that asks "what time is it now" — as opposed to
-    /// reading a fix's own `timestamp` — goes through this, so a test can drive elapsed time and the
-    /// auto-pause watchdog without sleeping.
+    /// The wall clock, injected. Everything asking "what time is it now" (as opposed to reading a fix's
+    /// own `timestamp`) goes through this, so tests drive elapsed time and the auto-pause watchdog
+    /// without sleeping.
     private let now: @MainActor () -> Date
-    /// Read directly wherever auto-pause is decided, rather than mirrored into a local flag off a
-    /// subscription. Under `@Observable` there is no `$autoPauseEnabled` publisher to sink, and there
-    /// no longer needs to be: a plain read always sees the current value, which is what the mirror was
-    /// only ever approximating. See `tick()` for the one case a read alone doesn't cover.
+    /// Read directly wherever auto-pause is decided rather than mirrored off a subscription: under
+    /// `@Observable` there is no `$autoPauseEnabled` publisher, and a plain read always sees the current
+    /// value anyway. See `tick()` for the one case a read alone doesn't cover.
     private let settings: SettingsStore
     @ObservationIgnored private var tickTimer: Timer?
 
@@ -57,26 +55,23 @@ final class TripManager {
     private var lastAltitudeSampleDistance: CLLocationDistance = 0
     private let altitudeSampleDistanceInterval: CLLocationDistance = 25 // meters
 
-    /// The trip's recorded track, for the detail map and the GPX export. Decimated by distance like
-    /// `altitudeProfile`, but far more finely: the height profile only needs its shape, whereas a
-    /// track sampled every 25 m visibly cuts corners on a map and exports as a ride nobody rode.
-    /// `@ObservationIgnored` — nothing draws it live, and waking observers for a growing array every
-    /// few seconds would invalidate the gauge for no one's benefit. `TripControlBar` reads it once,
-    /// at Save, which is not a body read and so needs no tracking.
+    /// The trip's recorded track, for the detail map and GPX export. Decimated by distance like
+    /// `altitudeProfile` but far more finely: a track sampled every 25 m visibly cuts corners on a map.
+    /// `@ObservationIgnored` — nothing draws it live, and waking observers for a growing array would
+    /// invalidate the gauge for no benefit; `TripControlBar` reads it once, at Save.
     @ObservationIgnored private(set) var routeSamples: [RouteSample] = []
     private var lastRouteSampleDistance: CLLocationDistance = 0
     private let routeSampleDistanceInterval: CLLocationDistance = 10 // meters
 
-    /// The barometer. Ascent/descent and grade are *sampled* from it at each accepted fix that
-    /// advanced the trip's distance, rather than accumulated on a subscription of its own, so they
-    /// inherit `consume(_:)`'s running and auto-pause gating for free — and a standstill, where
-    /// barometric pressure drift and GPS altitude wander read as climb, samples nothing at all.
+    /// The barometer. Ascent/descent and grade are *sampled* from it at each accepted fix that advanced
+    /// distance, not accumulated on their own subscription, so they inherit `consume(_:)`'s running and
+    /// auto-pause gating — and a standstill, where pressure drift and GPS altitude wander read as climb,
+    /// samples nothing.
     private let altimeter: any AltitudeSource
-    /// Which altitude source this trip is committed to. Latched once per trip from data actually
-    /// arriving (see `latchElevationSource(for:)`): hardware presence alone can't decide — a
-    /// barometer whose Motion & Fitness permission was denied reports available yet never delivers —
-    /// and the two sources measure against different zero points, so switching mid-trip would bank
-    /// the difference between them as a phantom climb.
+    /// The altitude source this trip is committed to, latched once from data actually arriving (see
+    /// `latchElevationSource(for:)`): hardware presence can't decide — a barometer with denied Motion &
+    /// Fitness permission reports available yet never delivers — and the two sources measure against
+    /// different zero points, so switching mid-trip would bank the difference as phantom climb.
     private enum ElevationSource { case undecided, barometer, gps }
     private var elevationSource: ElevationSource = .undecided
     /// Starts on the GPS deadband as a placeholder; the latch replaces it with an accumulator sized
@@ -89,43 +84,40 @@ final class TripManager {
     /// there is no barometer, notably the Simulator) wobbles by metres and needs the wider band.
     private static let barometerDeadband: CLLocationDistance = 1
     private static let gpsAltitudeDeadband: CLLocationDistance = 3
-    /// GPS altitude carries its own error bar; beyond this it is real but useless — a 30 m error
-    /// against a 3 m deadband manufactures climb out of thin air — so such fixes contribute nothing.
+    /// Beyond this, GPS altitude's own error bar manufactures climb — a 30 m error against a 3 m
+    /// deadband — so such fixes contribute nothing.
     private static let maxAltitudeVerticalAccuracy: CLLocationAccuracy = 15
-    /// How many fixes an undecided trip waits on the just-started barometer's first reading before
-    /// settling for GPS altitude. Readings normally arrive within a second or two of
-    /// `startUpdates()`, and a denied permission flips `isAvailable` instead, so this only decides
-    /// the pathological silent case.
+    /// How many fixes an undecided trip waits for the just-started barometer's first reading before
+    /// settling for GPS. Readings normally arrive within a second or two, and denied permission flips
+    /// `isAvailable` instead, so this only decides the pathological silent case.
     private static let barometerLatchGraceFixes = 10
-    /// A gap in sampling longer than this — a pause, a standstill, a stretch of unusable fixes —
-    /// separates two readings that aren't comparable: whatever altitude did in between wasn't
-    /// ridden. The next sample re-baselines instead of banking the gap (see `sampleElevation`).
+    /// A sampling gap longer than this — a pause, standstill, or stretch of unusable fixes — separates
+    /// two readings that aren't comparable: whatever altitude did in between wasn't ridden, so the next
+    /// sample re-baselines instead of banking the gap (see `sampleElevation`).
     private static let elevationContinuityGap: TimeInterval = 15
 
     /// Guards against GPS teleport artifacts corrupting the trip total.
     private let maxPlausibleSpeed: CLLocationSpeed = 120 / 3.6 // ~120 km/h in m/s
     private let jitterFloor: CLLocationDistance = 1.0
-    /// How many implausible fixes in a row to reject before concluding the anchor is the bad one.
-    /// The teleport guard can't tell which of the two locations is the artifact, so it assumes the
-    /// new fix is — correct for an isolated GPS spike. But if `previousLocation` is the outlier
-    /// (one bad fix that got anchored, or a jump while the signal was out), every later fix measures
-    /// an implausible speed against it and is dropped, and since a dropped fix doesn't advance the
-    /// anchor, distance stops accumulating for the rest of the ride with only Reset to clear it.
-    /// A genuine spike is a single fix, so a streak means the anchor is what's wrong: re-anchor and
-    /// write off the gap, costing at most this many fixes of distance instead of the whole trip.
+    /// How many implausible fixes in a row to reject before concluding the anchor is the bad one. The
+    /// guard can't tell which of the two locations is the artifact, so it blames the new fix — correct
+    /// for an isolated spike. But if `previousLocation` is the outlier, every later fix measures an
+    /// implausible speed against it and is dropped, and a dropped fix doesn't advance the anchor, so
+    /// distance would freeze for the rest of the ride (only Reset clears it). A genuine spike is a
+    /// single fix, so a streak means the anchor is wrong: re-anchor and write off the gap, costing at
+    /// most this many fixes instead of the whole trip.
     private let maxTeleportRejections = 3
     private var teleportRejections = 0
 
-    /// Auto-pause thresholds. The resume threshold sits deliberately above the pause threshold:
-    /// GPS speed drifts around 0–1.5 km/h at a standstill, so a single cutoff would flap on and off.
-    /// Pausing has to wait out `autoPauseDelay`, but resuming is immediate, so no moving time or
-    /// distance is lost pulling away from a light.
+    /// Auto-pause thresholds. Resume sits above pause (hysteresis): GPS speed drifts around 0–1.5 km/h
+    /// at a standstill, so a single cutoff would flap. Pausing waits out `autoPauseDelay`; resuming is
+    /// immediate, so no moving time or distance is lost pulling away from a light.
     private let autoPauseSpeed: CLLocationSpeed = 2 / 3.6 // 2 km/h in m/s
     private let autoResumeSpeed: CLLocationSpeed = 3 / 3.6 // 3 km/h in m/s
     private let autoPauseDelay: TimeInterval = 3
-    /// How long an auto-pause may survive without a single accepted fix to justify it. Fixes arrive
-    /// about once a second (`kCLDistanceFilterNone`), so anything near this gap means the signal
-    /// went unusable, not that the rider is holding still. See `releaseAutoPauseIfUnconfirmed()`.
+    /// How long an auto-pause may survive with no accepted fix to justify it. Fixes arrive about once a
+    /// second (`kCLDistanceFilterNone`), so this gap means the signal went unusable, not that the rider
+    /// is holding still. See `releaseAutoPauseIfUnconfirmed()`.
     private let autoPauseFixTimeout: TimeInterval = 5
     private var belowThresholdSince: Date?
     private var lastAcceptedFix: Date?
@@ -136,18 +128,16 @@ final class TripManager {
         return accumulatedDistance / duration
     }
 
-    /// Whether `makeLogEntry()` would currently succeed — used to gate the Save button so it's
-    /// only enabled when there's actually something meaningful to save.
+    /// Whether `makeLogEntry()` would currently succeed — gates the Save button so it's enabled only
+    /// when there's something meaningful to save.
     var canSaveTrip: Bool {
         state == .paused && accumulatedActiveDuration >= 5 && accumulatedDistance >= 10
     }
 
-    /// Whether `reset()` would actually clear anything — used to gate the Reset button. A trip is
-    /// resettable exactly while it is manually paused: mid-ride it must not be wiped out from under
-    /// the rider (and an auto-pause is still mid-ride), while an idle trip is already at zero, so
-    /// offering Reset there — as it did straight after a reset — is a button that does nothing when
-    /// tapped. No distance or duration floor, unlike `canSaveTrip`: clearing a false start too short
-    /// to be worth saving is precisely what Reset is for.
+    /// Whether `reset()` would clear anything — gates the Reset button. Resettable exactly while
+    /// manually paused: mid-ride (including auto-pause) it must not be wiped from under the rider, and
+    /// an idle trip is already at zero. No distance/duration floor, unlike `canSaveTrip`: clearing a
+    /// false start too short to save is precisely what Reset is for.
     var canResetTrip: Bool {
         state == .paused
     }
@@ -165,8 +155,8 @@ final class TripManager {
         cancellable = locationManager.acceptedLocations.sink { [weak self] location in
             self?.consume(location)
         }
-        // The timer is scheduled from the main actor, so its block fires on the main run loop;
-        // asserting that isolation keeps `tick()` synchronous instead of hopping through a `Task`.
+        // Scheduled from the main actor, so the block fires on the main run loop; asserting that
+        // isolation keeps `tick()` synchronous instead of hopping through a `Task`.
         tickTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.tick()
@@ -174,15 +164,14 @@ final class TripManager {
         }
     }
 
-    /// The periodic work the trip clock drives: retire an auto-pause nothing is confirming any more,
-    /// and republish elapsed time so a running trip's duration ticks up between fixes. Split out of the
-    /// timer so it can be driven directly rather than waited on.
+    /// The periodic work the trip clock drives: retire an unconfirmed auto-pause and republish elapsed
+    /// time so a running trip's duration ticks up between fixes. Split from the timer so tests drive it
+    /// directly rather than waiting on it.
     func tick() {
-        // Switching auto-pause off must release one that is already active, and the trip clock is the
-        // only place that can see it happen. `updateAutoPause(for:)` reads the setting too, but it runs
-        // on accepted fixes — and a rider who is auto-paused is, by definition, standing still, so there
-        // may be no next fix to notice the change at. This is the job the old `settings.$autoPauseEnabled`
-        // sink did; at 0.5 s, a toggle flipped in a sheet still feels instant.
+        // Switching auto-pause off must release one already active, and the clock is the only place that
+        // can see it: `updateAutoPause(for:)` reads the setting too but runs on accepted fixes, and an
+        // auto-paused rider is standing still, so there may be no next fix. This is what the old
+        // `settings.$autoPauseEnabled` sink did; at 0.5 s a toggle still feels instant.
         if !settings.autoPauseEnabled { clearAutoPause() }
         releaseAutoPauseIfUnconfirmed()
         guard activeStart != nil else { return }
@@ -200,14 +189,14 @@ final class TripManager {
 
     func pause() {
         guard state == .running else { return }
-        // Before `clearAutoPause()`, so it sees `.paused` and doesn't restart the clock: a manual
-        // pause supersedes an auto-pause, and releasing it is now the user's call alone.
+        // Set before `clearAutoPause()` so it sees `.paused` and doesn't restart the clock: a manual
+        // pause supersedes an auto-pause, and releasing it is now the user's call.
         state = .paused
         suspendClock()
         clearAutoPause()
         locationSource.setBackgroundUpdates(false)
         altimeter.stopUpdates()
-        // A parked bike isn't on a slope; the reading would otherwise assert the last hill all pause.
+        // A parked bike isn't on a slope; otherwise the readout asserts the last hill for the whole pause.
         currentGrade = nil
     }
 
@@ -217,10 +206,9 @@ final class TripManager {
         state = .running
         locationSource.setBackgroundUpdates(true)
         altimeter.startUpdates()
-        // Whatever altitude did across the pause wasn't ridden — and the restarted barometer rebases
-        // its zero anyway — so neither reference point survives: re-baseline rather than bank the
-        // difference as climb. (The sampling-gap rule in `sampleElevation` also catches this, but a
-        // short pause with a rebased barometer would slip under it.)
+        // Altitude across the pause wasn't ridden, and the restarted barometer rebases its zero anyway,
+        // so re-baseline rather than bank the difference as climb. (The sampling-gap rule in
+        // `sampleElevation` catches this too, but a short pause with a rebased barometer would slip under it.)
         elevation.reanchor()
         grade.reset()
     }
@@ -254,12 +242,12 @@ final class TripManager {
         altimeter.stopUpdates()
     }
 
-    /// Snapshots the current trip into a saveable log entry. `nil` if there's no paused trip to
-    /// save, or if the trip is too short/short-lived to be meaningful.
+    /// Snapshots the current trip into a saveable log entry, or `nil` if there's no paused trip or it's
+    /// too short/short-lived to be meaningful.
     ///
-    /// The entry is the trip's *scalars* only. Its height profile and its track are separate payloads —
-    /// `altitudeProfile` and `routeSamples` — which the caller passes to `TripDataStack.save` alongside
-    /// this. See `TripLogEntry` for why they aren't in it.
+    /// The entry is the trip's *scalars* only; its height profile and track are separate payloads
+    /// (`altitudeProfile`, `routeSamples`) the caller passes to `TripDataStack.save` alongside this. See
+    /// `TripLogEntry` for why they aren't in it.
     func makeLogEntry() -> TripLogEntry? {
         guard state == .paused, let tripStartDate else { return nil }
         guard accumulatedActiveDuration >= 5, accumulatedDistance >= 10 else { return nil }
@@ -277,9 +265,8 @@ final class TripManager {
         )
     }
 
-    /// `activeStart` is non-nil exactly while the clock is running — that is, not idle, not manually
-    /// paused and not auto-paused — so these two are the only places the wall-clock total is folded
-    /// up, shared by both kinds of pause.
+    /// `activeStart` is non-nil exactly while the clock runs — not idle, not manually or auto-paused —
+    /// so these two are the only places the wall-clock total is folded up, shared by both pauses.
     private func startClock() {
         activeStart = now()
     }
@@ -298,17 +285,14 @@ final class TripManager {
     private func beginAutoPause() {
         isAutoPaused = true
         suspendClock()
-        // Standing still, there is no current slope — without this the readout would keep asserting
-        // the last hill for the whole stop.
+        // Standing still: no current slope, else the readout keeps asserting the last hill.
         currentGrade = nil
     }
 
-    /// The one place auto-pause is unwound. Auto-pause is two pieces of state — the `isAutoPaused`
-    /// flag and the `belowThresholdSince` debounce that arms it — and every exit clears both here:
-    /// a manual pause, a reset, the setting going off, a fix at resume speed, the fix-loss watchdog,
-    /// and simply moving again. Owning both together is the point: they were previously cleared in
-    /// five places that didn't all clear both, and the debounce only stayed consistent because the
-    /// disabled-guard happened to re-clear it on every fix.
+    /// The one place auto-pause is unwound. It is two pieces of state — the `isAutoPaused` flag and the
+    /// `belowThresholdSince` debounce that arms it — and every exit clears both here: manual pause,
+    /// reset, setting off, a resume-speed fix, the fix-loss watchdog, and moving again. Owning both
+    /// together is the point: they were previously cleared in five places that didn't all clear both.
     private func clearAutoPause() {
         belowThresholdSince = nil
         guard isAutoPaused else { return }
@@ -317,15 +301,13 @@ final class TripManager {
         if state == .running { startClock() }
     }
 
-    /// An auto-pause is only ever *entered* on positive evidence — an accepted fix reporting a speed
-    /// below the threshold — so it must also be released once that evidence stops arriving.
-    /// `LocationManager` drops fixes whose accuracy is unusable, and accuracy commonly degrades
-    /// precisely because the phone is sitting still, so without this a rider who auto-paused at a
-    /// light and then rode off through a poor-signal stretch would never see a fix above the resume
-    /// threshold: the clock would stay frozen and that riding time would vanish from the trip.
-    /// Silence is not evidence of standing still, so fall back to counting the time — which is what
-    /// the trip did before auto-pause existed. If the rider really is stopped, the next usable fix
-    /// re-arms the debounce and pauses again.
+    /// Auto-pause is only ever entered on positive evidence — an accepted fix below the threshold — so
+    /// it must be released once that evidence stops. `LocationManager` drops unusable-accuracy fixes,
+    /// and accuracy often degrades *because* the phone is still, so without this a rider who auto-paused
+    /// at a light and rode off through poor signal would never see a resume-speed fix: the clock stays
+    /// frozen and that riding time vanishes. Silence isn't evidence of standing still, so fall back to
+    /// counting time (as the trip did before auto-pause). If the rider really is stopped, the next
+    /// usable fix re-arms the debounce and pauses again.
     private func releaseAutoPauseIfUnconfirmed() {
         guard isAutoPaused, let lastAcceptedFix else { return }
         guard now().timeIntervalSince(lastAcceptedFix) >= autoPauseFixTimeout else { return }
@@ -333,17 +315,16 @@ final class TripManager {
     }
 
     /// Decides whether a running trip should stop accumulating. Runs on the GPS clock
-    /// (`location.timestamp`) rather than wall time, to stay consistent with the `dt` used for
-    /// distance below. That is only safe because `LocationManager` rejects fixes older than its
-    /// `maxFixAge`: a cached fix carrying a timestamp minutes in the past would otherwise satisfy
-    /// `autoPauseDelay` on its own and pause a moving rider instantly, debounce and all.
+    /// (`location.timestamp`), not wall time, to match the `dt` used for distance. Safe only because
+    /// `LocationManager` rejects fixes older than `maxFixAge`: a cached fix timestamped minutes ago
+    /// would otherwise satisfy `autoPauseDelay` on its own and pause a moving rider instantly.
     private func updateAutoPause(for location: CLLocation) {
         guard settings.autoPauseEnabled else {
             clearAutoPause()
             return
         }
-        // A negative speed is CoreLocation's "unknown" sentinel, not a slow one — hold the current
-        // state rather than reading it as a standstill.
+        // Negative speed is CoreLocation's "unknown" sentinel, not a slow one — hold state rather than
+        // read it as a standstill.
         guard location.speed >= 0 else { return }
 
         if isAutoPaused {
@@ -368,8 +349,8 @@ final class TripManager {
     }
 
     private func consume(_ location: CLLocation) {
-        // Wall-clock, not `location.timestamp`: this measures whether usable fixes are still
-        // arriving, which is a fact about *now*, not about when the fix was taken.
+        // Wall-clock, not `location.timestamp`: this measures whether usable fixes are still arriving,
+        // a fact about *now*, not about when the fix was taken.
         lastAcceptedFix = now()
 
         guard state == .running else {
@@ -380,14 +361,14 @@ final class TripManager {
 
         updateAutoPause(for: location)
         guard !isAutoPaused else {
-            // Same reasoning as above: anchoring on every fix keeps the standstill's GPS drift from
-            // landing in the total as distance the moment the rider pulls away.
+            // As above: anchoring every fix keeps the standstill's GPS drift out of the total when the
+            // rider pulls away.
             anchor(on: location)
             return
         }
 
-        // Track top speed from the instantaneous GPS reading, ignoring the negative "unknown"
-        // sentinel and clamping obvious teleport spikes with the same ceiling used for distance.
+        // Top speed from the instantaneous GPS reading, ignoring the negative "unknown" sentinel and
+        // clamping teleport spikes with the same ceiling used for distance.
         if location.speed >= 0 {
             maxSpeed = max(maxSpeed, min(location.speed, maxPlausibleSpeed))
         }
@@ -408,9 +389,8 @@ final class TripManager {
         let delta = location.distance(from: previous)
         guard delta / dt <= maxPlausibleSpeed else {
             // Likely a GPS teleport artifact: drop it and hold the anchor, so the next good fix is
-            // still measured from a place the rider actually was. But a spike is a single fix — once
-            // they pile up it's the anchor that's wrong, and holding it would freeze distance for the
-            // rest of the ride. Re-anchor and write off the gap rather than the trip.
+            // measured from where the rider actually was. But once spikes pile up the anchor is what's
+            // wrong (see `maxTeleportRejections`) — re-anchor and write off the gap rather than freeze the trip.
             teleportRejections += 1
             if teleportRejections >= maxTeleportRejections {
                 anchor(on: location)
@@ -430,26 +410,24 @@ final class TripManager {
             lastAltitudeSampleDistance = accumulatedDistance
         }
 
-        // `routeSamples.isEmpty` is not redundant with the first-fix branch above: a trip started while
+        // `routeSamples.isEmpty` isn't redundant with the first-fix branch above: a trip started while
         // the app was already tracking has an anchor from before `start()`, so its first *running* fix
-        // comes through here — and without this the track would begin 10 m into the ride, putting the
-        // start marker down the road from where the rider actually set off.
+        // comes through here — without this the track would begin 10 m in, planting the start marker down the road.
         if routeSamples.isEmpty || accumulatedDistance - lastRouteSampleDistance >= routeSampleDistanceInterval {
             appendRouteSample(from: location)
         }
 
-        // Only a fix that moved the trip feeds elevation: the jitter floor freezes distance at a
-        // standstill, and this is the same protection for climb — GPS altitude wander and barometric
-        // drift at a red light must not accumulate, and auto-pause alone can't guarantee that
-        // (it is a setting the rider may switch off).
+        // Only a fix that moved the trip feeds elevation — the same jitter-floor protection distance
+        // gets, applied to climb: GPS altitude wander and barometric drift at a red light must not
+        // accumulate, and auto-pause can't guarantee that (the rider may switch it off).
         if advanced {
             sampleElevation(from: location)
         }
     }
 
-    /// Records where the rider is, for the track. Unlike the elevation sampling below, this takes the
-    /// fix whether or not it carried a usable altitude: a point with no height is still a point on the
-    /// map, and GPX just omits its `<ele>`.
+    /// Records where the rider is, for the track. Unlike elevation sampling, this takes the fix with or
+    /// without a usable altitude: a point with no height is still a point on the map, and GPX just omits
+    /// its `<ele>`.
     private func appendRouteSample(from location: CLLocation) {
         routeSamples.append(RouteSample(
             latitude: location.coordinate.latitude,
@@ -460,10 +438,9 @@ final class TripManager {
         lastRouteSampleDistance = accumulatedDistance
     }
 
-    /// Reads the trip's altitude source — committed by `latchElevationSource(for:)` at the first
-    /// sample — into the ascent/descent totals and the grade window. Only reached by a fix that
-    /// passed every guard above *and* advanced the distance, which is the gating the elevation
-    /// figures rely on (see `altimeter`).
+    /// Reads the trip's altitude source — committed by `latchElevationSource(for:)` at the first sample
+    /// — into the ascent/descent totals and grade window. Only reached by a fix that passed every guard
+    /// above *and* advanced distance, the gating the elevation figures rely on (see `altimeter`).
     private func sampleElevation(from location: CLLocation) {
         let altitude: CLLocationDistance?
         switch elevationSource {
@@ -483,8 +460,8 @@ final class TripManager {
         lastElevationSampleTimestamp = location.timestamp
 
         elevation.add(altitude: altitude)
-        // The deadbanded totals move on the rare fix that crosses the band, but an identical rewrite
-        // still invalidates every observer — publish only change.
+        // The deadbanded totals move only on the rare fix that crosses the band; an identical rewrite
+        // still invalidates every observer, so publish only on change.
         if totalAscent != elevation.ascent { totalAscent = elevation.ascent }
         if totalDescent != elevation.descent { totalDescent = elevation.descent }
 
@@ -493,11 +470,11 @@ final class TripManager {
         if currentGrade != newGrade { currentGrade = newGrade }
     }
 
-    /// Commits the trip to barometer or GPS altitude from data actually arriving, not from hardware
-    /// presence: a barometer whose Motion & Fitness permission was denied reports available yet
-    /// never delivers a reading. The barometer gets a short grace to produce its first reading — it
-    /// was only started with the trip — and GPS wins when there is no barometer, when it has failed
-    /// (`AltimeterManager` folds update errors into `isAvailable`), or when the grace runs out.
+    /// Commits the trip to barometer or GPS altitude from data actually arriving, not hardware presence:
+    /// a barometer with denied Motion & Fitness permission reports available yet never delivers. The
+    /// barometer gets a short grace for its first reading (it was only just started); GPS wins when there
+    /// is no barometer, when it has failed (`AltimeterManager` folds errors into `isAvailable`), or when
+    /// the grace runs out.
     private func latchElevationSource(for location: CLLocation) -> CLLocationDistance? {
         if altimeter.isAvailable, let reading = altimeter.relativeAltitude {
             elevationSource = .barometer

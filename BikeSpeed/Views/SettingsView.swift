@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    /// `@Bindable`, not `@Environment`: the settings sheet is the one place that *writes* the store, and
-    /// this is what keeps the `$settings.autoPauseEnabled` bindings below working verbatim.
+    /// `@Bindable`, not `@Environment`: the settings sheet is the one place that *writes* the store,
+    /// which is what the `$settings.autoPauseEnabled` bindings below need.
     @Bindable var settings: SettingsStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
@@ -19,9 +19,9 @@ struct SettingsView: View {
                 let measurementSystem = settings.measurementSystem
                 let currentValue = measurementSystem.maxGaugeSpeedValue(fromCanonicalKMH: settings.maxGaugeSpeedKMH)
                 let step = measurementSystem.maxGaugeSpeedStep
-                // A unit switch can leave the current value off the step grid (e.g. converted from the
-                // other unit). Rather than adding a full step to that odd value, snap in the pressed
-                // direction to the nearest step multiple, so the displayed speed is always a round number.
+                // A unit switch can leave the current value off the step grid (converted from the other
+                // unit). Rather than add a full step to that odd value, snap in the pressed direction to
+                // the nearest step multiple, so the displayed speed is always round.
                 let quotient = currentValue / step
                 let isOnStepGrid = abs(quotient.rounded() - quotient) < 0.001
                 let steppedQuotient: Double
@@ -78,8 +78,8 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
                 
-                // Only after an actual denial on barometer hardware — the prompt itself can never
-                // be re-shown, so the Settings toggle is the one way back (see the predicate's doc).
+                // Only after an actual denial on barometer hardware — the prompt can never be re-shown,
+                // so the Settings toggle is the one way back (see the predicate's doc).
                 if AltimeterManager.needsMotionPermissionHint() {
                     Section {
                         Button("Open Settings") {
@@ -96,8 +96,8 @@ struct SettingsView: View {
                     }
                 }
 
-                // Scrolls with the content rather than sitting in a safe-area inset, so it can
-                // never overlap the last section however many sections are shown above it.
+                // Scrolls with the content rather than sitting in a safe-area inset, so it never
+                // overlaps the last section however many sections appear above it.
                 Section {
                 } footer: {
                     VStack(spacing: 4) {
