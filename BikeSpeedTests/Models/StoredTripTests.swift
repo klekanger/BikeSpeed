@@ -55,13 +55,18 @@ struct StoredTripTests {
     @Test(.tags(.edgeCase))
     func theSchemaIsCloudKitCompatible() throws {
         let schema = TripModelContainer.schema
+        // Mirror `TripModelContainer.app()`'s real arguments (schema + migration plan + the same private
+        // container id) so this genuinely guards the configuration the app ships, not a lookalike. An
+        // in-memory store here keeps the parallel suite collision-free; container *init* still validates the
+        // mirroring rules regardless.
         #expect(throws: Never.self) {
             try ModelContainer(
                 for: schema,
+                migrationPlan: BikeSpeedMigrationPlan.self,
                 configurations: ModelConfiguration(
                     schema: schema,
                     isStoredInMemoryOnly: true,
-                    cloudKitDatabase: .private("iCloud.lekanger.BikeSpeed")
+                    cloudKitDatabase: .private(TripModelContainer.cloudKitContainerID)
                 )
             )
         }

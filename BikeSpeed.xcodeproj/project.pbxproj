@@ -130,6 +130,14 @@
 				TargetAttributes = {
 					2ADBC0842FF9647800D9AB89 = {
 						CreatedOnToolsVersion = 26.6;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 					2ADBC1052FF9647800D9AB89 = {
 						CreatedOnToolsVersion = 26.6;
@@ -326,6 +334,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = BikeSpeed;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BikeSpeed.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 20260715;
 				DEVELOPMENT_TEAM = 4SB6V3C5KS;
@@ -365,6 +374,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = BikeSpeed;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BikeSpeed.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 20260715;
 				DEVELOPMENT_TEAM = 4SB6V3C5KS;
