@@ -11,12 +11,15 @@ struct SpeedProfileTests {
 
     /// Builds a straight northbound track `count` points long, one point every `spacingMeters`, one
     /// second apart. `storedSpeed` is written onto every point when non-nil (the new-trip path); leaving
-    /// it nil exercises the derive-from-timestamps fallback.
+    /// it nil exercises the derive-from-timestamps fallback. `storeDistance` records the accumulated
+    /// distance on each point (as `TripManager` now does); leaving it off exercises the legacy geodesic
+    /// fallback.
     private func track(
         count: Int,
         spacingMeters: CLLocationDistance,
         secondsApart: TimeInterval = 1,
-        storedSpeed: CLLocationSpeed? = nil
+        storedSpeed: CLLocationSpeed? = nil,
+        storeDistance: Bool = false
     ) -> [RouteSample] {
         let start = CLLocationCoordinate2D(latitude: 59.9139, longitude: 10.7522)
         let base = Date(timeIntervalSince1970: 1_760_000_000)
@@ -26,7 +29,8 @@ struct SpeedProfileTests {
                 longitude: start.longitude,
                 altitude: 100,
                 timestamp: base.addingTimeInterval(Double(index) * secondsApart),
-                speed: storedSpeed
+                speed: storedSpeed,
+                distance: storeDistance ? Double(index) * spacingMeters : nil
             )
         }
     }
@@ -45,6 +49,59 @@ struct SpeedProfileTests {
         #expect(profile.count == 5)
         expectClose(try #require(profile.first).distance, 0, within: 0.01)
         expectClose(try #require(profile.last).distance, 40, within: 0.5)
+    }
+
+    @Test
+    func storedDistanceIsUsedVerbatimAsTheXAxis() throws {
+        // A new trip records accumulated distance per point. The profile must plot those exact values
+        // (the same basis the height profile uses) rather than re-deriving from coordinates — so the
+        // X-axis matches the height chart and the trip's distance total.
+        let profile = SpeedProfile.build(
+            from: track(count: 5, spacingMeters: 10, storedSpeed: 8, storeDistance: true)
+        )
+
+        #expect(profile.count == 5)
+        expectClose(try #require(profile.first).distance, 0, within: 0.0001)
+        // Exact, not "within 0.5": these are the stored values, no geodesy in the path.
+        expectClose(try #require(profile.last).distance, 40, within: 0.0001)
+    }
+
+    @Test
+    func aStopSizedGapDoesNotDrawAFalseStandstill() throws {
+        // Legacy trip (no stored speed): the rider holds a steady 10 m/s, but between points 1 and 2 sits
+        // a 120 s stop covering only the usual 10 m. Deriving 10 m ÷ 121 s ≈ 0.08 m/s across that gap
+        // would draw a phantom standstill; the gap guard must carry the real speed instead.
+        let start = CLLocationCoordinate2D(latitude: 59.9139, longitude: 10.7522)
+        let base = Date(timeIntervalSince1970: 1_760_000_000)
+        let offsets: [TimeInterval] = [0, 1, 122, 123] // 120 s stop between index 1 and 2
+        let samples = offsets.enumerated().map { index, offset in
+            RouteSample(
+                latitude: start.latitude + Double(index) * 10 / 111_320,
+                longitude: start.longitude,
+                altitude: 100,
+                timestamp: base.addingTimeInterval(offset)
+            )
+        }
+
+        let profile = SpeedProfile.build(from: samples)
+
+        for sample in profile {
+            #expect(sample.speed > 5, "the pause gap must not derive a near-zero speed")
+        }
+    }
+
+    @Test
+    func aLongRideIsDecimatedToAChartAppropriateDensity() throws {
+        // Far more route points than a chart can resolve must be thinned, and the last point kept so the
+        // line still reaches the trip's full distance.
+        let count = SpeedProfile.maxChartPoints * 3
+        let samples = track(count: count, spacingMeters: 10, storedSpeed: 7, storeDistance: true)
+
+        let profile = SpeedProfile.build(from: samples)
+
+        #expect(profile.count <= SpeedProfile.maxChartPoints + 1)
+        #expect(profile.count > SpeedProfile.maxChartPoints / 2, "shouldn't over-thin")
+        expectClose(try #require(profile.last).distance, Double(count - 1) * 10, within: 0.0001)
     }
 
     @Test

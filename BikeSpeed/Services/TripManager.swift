@@ -437,7 +437,10 @@ final class TripManager {
             // Negative is CoreLocation's "unknown" sentinel — store nil, not a bogus reading, so the
             // profile derives speed from the timestamps for that point instead. Clamp the rest to the
             // same ceiling `maxSpeed` uses, so a glitchy fix can't plant a spike in the recorded track.
-            speed: location.speed >= 0 ? min(location.speed, maxPlausibleSpeed) : nil
+            speed: location.speed >= 0 ? min(location.speed, maxPlausibleSpeed) : nil,
+            // The guarded accumulated distance, so the speed profile shares the height profile's X-axis
+            // exactly rather than re-deriving a noisier one from raw coordinates.
+            distance: accumulatedDistance
         ))
         lastRouteSampleDistance = accumulatedDistance
     }

@@ -356,7 +356,8 @@ private struct RouteMapFullScreenView: View {
             longitude: start.longitude,
             altitude: 100,
             timestamp: previewBase.addingTimeInterval(Double(index)),
-            speed: 6.8 + 2.5 * sin(Double(index) / 12)
+            speed: 6.8 + 2.5 * sin(Double(index) / 12),
+            distance: Double(index) * 10
         )
     }
     let trip = StoredTrip(

@@ -946,7 +946,21 @@
       }
     },
     "Speed" : {
-
+      "comment" : "Chart series label for the speed-profile graph (used by VoiceOver / audio graph).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speed"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hastighet"
+          }
+        }
+      }
     },
     "Speed profile" : {
       "localizations" : {

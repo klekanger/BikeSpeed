@@ -1055,6 +1055,9 @@ struct TripManagerTests {
         // The live GPS speed rides along on the point, so the trip-log speed profile can prefer it over
         // deriving speed from positions.
         expectClose(try #require(sample.speed), 6, within: 0.01)
+        // And the accumulated distance, so the speed profile shares the height profile's X-axis exactly
+        // instead of re-deriving a noisier one from raw coordinates.
+        expectClose(try #require(sample.distance), 5, within: 0.5)
     }
 
     /// CoreLocation reports a negative speed when it can't measure one (e.g. at a standstill). That
