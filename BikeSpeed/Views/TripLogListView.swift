@@ -199,7 +199,9 @@ struct TripLogListView: View {
 
     private func row(for entry: TripLogEntry) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(entry.startDate.formatted(date: .abbreviated, time: .shortened))
+            // `.locale(locale)` so the row date follows the in-app Language override, not the device
+            // language — the same reason the distance/duration below and the month header above take it.
+            Text(entry.startDate.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale)))
                 .font(.headline)
             HStack(spacing: 12) {
                 // Icon orange (echoing the home screen's stat icons), text secondary — a touch of the
