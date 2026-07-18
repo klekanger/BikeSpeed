@@ -23,6 +23,16 @@ struct TripLogListView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
 
+    /// Narrows the *list* to a date window. The summary above stays lifetime regardless — see
+    /// `TripDateRange`. Not persisted: it resets to `.all` each time the log is opened.
+    @State private var dateRange = TripDateRange.all
+
+    /// The rows the current filter admits. `TripDateRange.contains` reads only `startDate` (a scalar), so
+    /// filtering never faults in a track — the same reason the list rows themselves stay blob-free.
+    private var visibleTrips: [StoredTrip] {
+        trips.filter { dateRange.contains($0.startDate, now: Date(), calendar: .current) }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -33,18 +43,30 @@ struct TripLogListView: View {
                         // Its own view, not a `@ViewBuilder` helper: its body reduces the whole log
                         // eight times over (three period totals, four personal bests), so as a view
                         // it's skipped when the query hasn't changed instead of re-running on every
-                        // locale change, sheet toggle and delete animation.
+                        // locale change, sheet toggle and delete animation. Fed the *unfiltered* trips
+                        // on purpose — the date filter narrows the list, never the lifetime summary.
                         TripLogSummarySection(trips: trips)
 
-                        Section {
-                            ForEach(trips) { trip in
-                                NavigationLink(value: trip) {
-                                    row(for: trip.entry)
+                        if visibleTrips.isEmpty {
+                            // The log isn't empty, this window is. Keep the summary and the filter
+                            // reachable so the rider can widen the range rather than think trips vanished.
+                            ContentUnavailableView(
+                                "No trips in this period",
+                                systemImage: "calendar",
+                                description: Text("Try a wider date range.")
+                            )
+                            .listRowSeparator(.hidden)
+                        } else {
+                            Section {
+                                ForEach(visibleTrips) { trip in
+                                    NavigationLink(value: trip) {
+                                        row(for: trip.entry)
+                                    }
                                 }
-                            }
-                            .onDelete { offsets in
-                                let doomed = offsets.map { trips[$0] }
-                                Task { await stack.delete(doomed) }
+                                .onDelete { offsets in
+                                    let doomed = offsets.map { visibleTrips[$0] }
+                                    Task { await stack.delete(doomed) }
+                                }
                             }
                         }
                     }
@@ -57,11 +79,34 @@ struct TripLogListView: View {
             }
             .navigationTitle(settingsStore.appLanguage.localizedString(forKey: "Trip Log"))
             .toolbar {
+                if !trips.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        filterMenu
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
             }
         }
+    }
+
+    /// A `Picker` inside a `Menu` — iOS renders it as a checklist with the active range ticked. The icon
+    /// gains its `.fill` variant while a filter is active, so "a filter is on" reads at a glance without
+    /// opening the menu.
+    private var filterMenu: some View {
+        Menu {
+            Picker("Filter", selection: $dateRange) {
+                ForEach(TripDateRange.allCases, id: \.self) { range in
+                    Text(range.titleKey).tag(range)
+                }
+            }
+        } label: {
+            Image(systemName: dateRange == .all
+                ? "line.3.horizontal.decrease.circle"
+                : "line.3.horizontal.decrease.circle.fill")
+        }
+        .accessibilityLabel(Text("Filter trips"))
     }
 
     private func row(for entry: TripLogEntry) -> some View {
