@@ -1,1240 +1,1244 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "": {},
-    "Altitude": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Altitude"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "Altitude" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altitude"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Høyde over havet"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Høyde over havet"
           }
         }
       }
     },
-    "Auto-pause": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-pause"
+    "Auto-pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-pause"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autopause"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autopause"
           }
         }
       }
     },
-    "Auto-paused": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto-paused"
+    "Auto-paused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-paused"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autopauset"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autopauset"
           }
         }
       }
     },
-    "Average speed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Average speed"
+    "Average speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average speed"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gjennomsnittshastighet"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjennomsnittshastighet"
           }
         }
       }
     },
-    "Biggest climb": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Biggest climb"
+    "Biggest climb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biggest climb"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Største stigning"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Største stigning"
           }
         }
       }
     },
-    "Cancel": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
+    "Cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avbryt"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt"
           }
         }
       }
     },
-    "Climb": {
-      "comment": "Name of the altitude cell's climb page. Shared with nothing else — the Settings header uses \"Climb (accuracy)\".",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Climb"
+    "Climb" : {
+      "comment" : "Name of the altitude cell's climb page. Shared with nothing else — the Settings header uses \"Climb (accuracy)\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Climb"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stigning"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stigning"
           }
         }
       }
     },
-    "Climb (accuracy)": {
-      "comment": "Settings section header above the Motion & Fitness permission hint.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Climb (accuracy)"
+    "Climb (accuracy)" : {
+      "comment" : "Settings section header above the Motion & Fitness permission hint.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Climb (accuracy)"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stigning (nøyaktighet)"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stigning (nøyaktighet)"
           }
         }
       }
     },
-    "Couldn't open your trip history": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't open your trip history"
+    "Couldn't open your trip history" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't open your trip history"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kunne ikke åpne turloggen"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke åpne turloggen"
           }
         }
       }
     },
-    "Couldn't save trip": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't save trip"
+    "Couldn't save trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save trip"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kunne ikke lagre turen"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke lagre turen"
           }
         }
       }
     },
-    "Current speed": {
-      "comment": "VoiceOver label for the digital speed readout.",
-      "isCommentAutoGenerated": true,
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current speed"
+    "Current speed" : {
+      "comment" : "VoiceOver label for the digital speed readout.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current speed"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nåværende hastighet"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nåværende hastighet"
           }
         }
       }
     },
-    "Date": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date"
+    "Date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dato"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dato"
           }
         }
       }
     },
-    "Delete Trip": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete Trip"
+    "Delete this trip?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this trip?"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Slett tur"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slette denne turen?"
           }
         }
       }
     },
-    "Delete this trip?": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete this trip?"
+    "Delete Trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Trip"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Slette denne turen?"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slett tur"
           }
         }
       }
     },
-    "Direction of travel": {
-      "comment": "VoiceOver label for the compass direction indicator.",
-      "isCommentAutoGenerated": true,
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Direction of travel"
+    "Direction of travel" : {
+      "comment" : "VoiceOver label for the compass direction indicator.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direction of travel"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retning"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retning"
           }
         }
       }
     },
-    "Distance": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Distance"
+    "Distance" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tilbakelagt distanse"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilbakelagt distanse"
           }
         }
       }
     },
-    "Done": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done"
+    "Done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ferdig"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ferdig"
           }
         }
       }
     },
-    "Duration": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duration"
+    "Duration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duration"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Varighet"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varighet"
           }
         }
       }
     },
-    "E": {
-      "comment": "Cardinal direction: east. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E"
+    "E" : {
+      "comment" : "Cardinal direction: east. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ø"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ø"
           }
         }
       }
     },
-    "Export GPX": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Export GPX"
+    "Export GPX" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export GPX"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eksporter GPX"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eksporter GPX"
           }
         }
       }
     },
-    "Fair": {
-      "comment": "VoiceOver value for a marginal GPS signal.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fair"
+    "Fair" : {
+      "comment" : "VoiceOver value for a marginal GPS signal.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fair"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Middels"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Middels"
           }
         }
       }
     },
-    "Fastest average": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fastest average"
+    "Fastest average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fastest average"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Høyeste snittfart"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Høyeste snittfart"
           }
         }
       }
     },
-    "Finish": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finish"
+    "Finish" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mål"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mål"
           }
         }
       }
     },
-    "GPS signal": {
-      "comment": "VoiceOver label for the GPS signal-strength indicator.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GPS signal"
+    "Gauge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speedometer"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GPS-signal"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speedometer"
           }
         }
       }
     },
-    "Gauge": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Speedometer"
+    "Good" : {
+      "comment" : "VoiceOver value for a strong GPS signal.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Speedometer"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Godt"
           }
         }
       }
     },
-    "Good": {
-      "comment": "VoiceOver value for a strong GPS signal.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Good"
+    "GPS signal" : {
+      "comment" : "VoiceOver label for the GPS signal-strength indicator.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS signal"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Godt"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS-signal"
           }
         }
       }
     },
-    "Height profile": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Height profile"
+    "Height profile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Height profile"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Høydeprofil"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Høydeprofil"
           }
         }
       }
     },
-    "Imperial": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imperial"
+    "Imperial" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imperial"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Miles (mi, ft)"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miles (mi, ft)"
           }
         }
       }
     },
-    "Language": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language"
+    "Language" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Språk"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Språk"
           }
         }
       }
     },
-    "Logging": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Logging"
+    "Logging" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logging"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Logger"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logger"
           }
         }
       }
     },
-    "Longest ride": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Longest ride"
+    "Longest ride" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longest ride"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lengste tur"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lengste tur"
           }
         }
       }
     },
-    "Max speed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Max speed"
+    "Max speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max speed"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maks hastighet"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maks hastighet"
           }
         }
       }
     },
-    "Metric": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Metric"
+    "Metric" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metric"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Metrisk (km, m)"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metrisk (km, m)"
           }
         }
       }
     },
-    "Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings."
+    "Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motion & Fitness is off, so climb is measured by GPS instead of barometer. Turn it on for more accurate climb readings."
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bevegelse og trening er slått av, så stigning måles med GPS i stedet for barometer. Slå det på for mer nøyaktig måling av stigning."
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevegelse og trening er slått av, så stigning måles med GPS i stedet for barometer. Slå det på for mer nøyaktig måling av stigning."
           }
         }
       }
     },
-    "N": {
-      "comment": "Cardinal direction: north. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "N"
+    "N" : {
+      "comment" : "Cardinal direction: north. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "N"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N"
           }
         }
       }
     },
-    "NE": {
-      "comment": "Compass abbreviation shown in the direction-of-travel cell: north-east.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "NE"
+    "NE" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: north-east.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NE"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "NØ"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NØ"
           }
         }
       }
     },
-    "NW": {
-      "comment": "Compass abbreviation shown in the direction-of-travel cell: north-west.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "NW"
+    "No altitude data for this trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No altitude data for this trip"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "NV"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen høydedata for denne turen"
           }
         }
       }
     },
-    "No altitude data for this trip": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No altitude data for this trip"
+    "No trips logged yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No trips logged yet"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ingen høydedata for denne turen"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen turer registrert ennå"
           }
         }
       }
     },
-    "No trips logged yet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No trips logged yet"
+    "NW" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: north-west.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NW"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ingen turer registrert ennå"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NV"
           }
         }
       }
     },
-    "OK": {
-      "comment": "A button that dismisses an alert.",
-      "isCommentAutoGenerated": true
+    "OK" : {
+      "comment" : "A button that dismisses an alert.",
+      "isCommentAutoGenerated" : true
     },
-    "Open Settings": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Settings"
+    "Open Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Åpne Innstillinger"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åpne Innstillinger"
           }
         }
       }
     },
-    "Pause": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pause"
+    "Pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pause"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
           }
         }
       }
     },
-    "Pauses distance and time automatically when you stop.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pauses distance and time automatically when you stop."
+    "Pauses distance and time automatically when you stop." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pauses distance and time automatically when you stop."
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pauser distanse og tid automatisk når du står stille."
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pauser distanse og tid automatisk når du står stille."
           }
         }
       }
     },
-    "Personal bests": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Personal bests"
+    "Personal bests" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal bests"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Personlige rekorder"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personlige rekorder"
           }
         }
       }
     },
-    "Poor": {
-      "comment": "VoiceOver value for a weak GPS signal.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poor"
+    "Poor" : {
+      "comment" : "VoiceOver value for a weak GPS signal.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poor"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dårlig"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dårlig"
           }
         }
       }
     },
-    "Position": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Position"
+    "Position" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Position"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GPS-posisjon"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS-posisjon"
           }
         }
       }
     },
-    "Reset": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reset"
+    "Reset" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nullstill"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nullstill"
           }
         }
       }
     },
-    "Resume": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resume"
+    "Resume" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fortsett"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsett"
           }
         }
       }
     },
-    "Rides": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rides"
+    "Rides" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rides"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turer"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turer"
           }
         }
       }
     },
-    "Route": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Route"
+    "Route" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rute"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rute"
           }
         }
       }
     },
-    "S": {
-      "comment": "Cardinal direction: south. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S"
+    "S" : {
+      "comment" : "Cardinal direction: south. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
           }
         }
       }
     },
-    "SE": {
-      "comment": "Compass abbreviation shown in the direction-of-travel cell: south-east.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SE"
+    "Save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SØ"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagre"
           }
         }
       }
     },
-    "SW": {
-      "comment": "Compass abbreviation shown in the direction-of-travel cell: south-west.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SW"
+    "SE" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: south-east.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SE"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SV"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SØ"
           }
         }
       }
     },
-    "Save": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save"
+    "Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lagre"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Innstillinger"
           }
         }
       }
     },
-    "Settings": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settings"
+    "Shows %@" : {
+      "comment" : "VoiceOver hint on a stats cell: names the readout a tap would switch to.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows %@"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Innstillinger"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viser %@"
           }
         }
       }
     },
-    "Shows %@": {
-      "comment": "VoiceOver hint on a stats cell: names the readout a tap would switch to.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Shows %@"
+    "Start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Viser %@"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
           }
         }
       }
     },
-    "Start": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start"
+    "Stop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Start"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopp"
           }
         }
       }
     },
-    "Stop": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stop"
+    "SW" : {
+      "comment" : "Compass abbreviation shown in the direction-of-travel cell: south-west.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SW"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stopp"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SV"
           }
         }
       }
     },
-    "System": {
-      "comment": "A system-selected language.",
-      "isCommentAutoGenerated": true,
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System"
+    "System" : {
+      "comment" : "A system-selected language.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
           }
         }
       }
     },
-    "This cannot be undone.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This cannot be undone."
+    "This cannot be undone." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This cannot be undone."
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dette kan ikke angres."
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette kan ikke angres."
           }
         }
       }
     },
-    "This month": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This month"
+    "This month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This month"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Denne måneden"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne måneden"
           }
         }
       }
     },
-    "This week": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This week"
+    "This week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Denne uken"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne uken"
           }
         }
       }
     },
-    "Top speed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Top speed"
+    "Top speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top speed"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toppfart"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toppfart"
           }
         }
       }
     },
-    "Total ascent": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total ascent"
+    "Total ascent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total ascent"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total stigning"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total stigning"
           }
         }
       }
     },
-    "Total descent": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total descent"
+    "Total descent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total descent"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total nedstigning"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total nedstigning"
           }
         }
       }
     },
-    "Total distance": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total distance"
+    "Total distance" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total distance"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total distanse"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total distanse"
           }
         }
       }
     },
-    "Total time": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total time"
+    "Total time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total time"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total tid"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total tid"
           }
         }
       }
     },
-    "Totals": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Totals"
+    "Totals" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totals"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Totalt"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totalt"
           }
         }
       }
     },
-    "Trip": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trip"
+    "Trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tur"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tur"
           }
         }
       }
     },
-    "Trip Log": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trip Log"
+    "Trip Log" : {
+      "comment" : "Trip-log screen navigation title. Resolved via AppLanguage.localizedString(forKey:), which the string extractor can't see — hence manual, so it isn't flagged stale.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip Log"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turlogg"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turlogg"
           }
         }
       }
     },
-    "Trip saved": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trip saved"
+    "Trip saved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip saved"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tur lagret"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tur lagret"
           }
         }
       }
     },
-    "Trips": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trips"
+    "Trips" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trips"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turer"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turer"
           }
         }
       }
     },
-    "Units": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Units"
+    "Units" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Units"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enheter"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enheter"
           }
         }
       }
     },
-    "W": {
-      "comment": "Cardinal direction: west. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "W"
+    "W" : {
+      "comment" : "Cardinal direction: west. Used both as a compass abbreviation in the direction-of-travel cell and as a hemisphere letter in the GPS position cell.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W"
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "V"
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "V"
           }
         }
       }
     },
-    "Your ride hasn't been lost — it's still paused. Try saving again.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your ride hasn't been lost — it's still paused. Try saving again."
+    "Your ride hasn't been lost — it's still paused. Try saving again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your ride hasn't been lost — it's still paused. Try saving again."
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turen er ikke tapt – den er fortsatt satt på pause. Prøv å lagre på nytt."
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turen er ikke tapt – den er fortsatt satt på pause. Prøv å lagre på nytt."
           }
         }
       }
     },
-    "Your saved trips are still on this device, but couldn't be moved to the new format. They haven't been deleted. Updating the app again may fix it.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your saved trips are still on this device, but couldn't be moved to the new format. They haven't been deleted. Updating the app again may fix it."
+    "Your saved trips are still on this device, but couldn't be moved to the new format. They haven't been deleted. Updating the app again may fix it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your saved trips are still on this device, but couldn't be moved to the new format. They haven't been deleted. Updating the app again may fix it."
           }
         },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turene dine ligger fortsatt på denne enheten, men kunne ikke flyttes til det nye formatet. De er ikke slettet. En ny oppdatering av appen kan løse det."
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turene dine ligger fortsatt på denne enheten, men kunne ikke flyttes til det nye formatet. De er ikke slettet. En ny oppdatering av appen kan løse det."
           }
         }
       }
     }
   },
-  "version": "1.1"
+  "version" : "1.1"
 }
