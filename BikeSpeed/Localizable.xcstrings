@@ -4,6 +4,22 @@
     "" : {
 
     },
+    "All" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle"
+          }
+        }
+      }
+    },
     "Altitude" : {
       "localizations" : {
         "en" : {
@@ -365,6 +381,38 @@
         }
       }
     },
+    "Filter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        }
+      }
+    },
+    "Filter trips" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter trips"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtrer turer"
+          }
+        }
+      }
+    },
     "Finish" : {
       "localizations" : {
         "en" : {
@@ -493,6 +541,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Språk"
+          }
+        }
+      }
+    },
+    "Last 30 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 30 days"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siste 30 dager"
+          }
+        }
+      }
+    },
+    "Last 7 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 7 days"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siste 7 dager"
           }
         }
       }
@@ -641,6 +721,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ingen fartsdata for denne turen"
+          }
+        }
+      }
+    },
+    "No trips in this period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No trips in this period"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen turer i denne perioden"
           }
         }
       }
@@ -894,6 +990,22 @@
         }
       }
     },
+    "Scroll to top" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll to top"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rull til toppen"
+          }
+        }
+      }
+    },
     "SE" : {
       "comment" : "Compass abbreviation shown in the direction-of-travel cell: south-east.",
       "extractionState" : "manual",
@@ -1094,6 +1206,22 @@
         }
       }
     },
+    "This year" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This year"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I år"
+          }
+        }
+      }
+    },
     "Top speed" : {
       "localizations" : {
         "en" : {
@@ -1252,6 +1380,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turer"
+          }
+        }
+      }
+    },
+    "Try a wider date range." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try a wider date range."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prøv et større datointervall."
           }
         }
       }
