@@ -23,6 +23,7 @@ struct TopControlCluster: View {
     private var content: some View {
         let buttons = HStack(spacing: 2) {
             clusterButton("Trips", systemImage: "list.bullet.rectangle.portrait", action: onTripLog)
+                .foregroundStyle(.orange)
 
             Divider()
                 .frame(height: 22)
