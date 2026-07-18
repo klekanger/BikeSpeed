@@ -1047,11 +1047,32 @@ struct TripManagerTests {
         harness.anchor()
         harness.trip.start()
 
-        harness.move(meters: 5, altitude: 137)
+        harness.move(meters: 5, speed: 6, altitude: 137)
 
         let sample = try #require(harness.trip.routeSamples.first)
         expectClose(try #require(sample.altitude), 137, within: 0.01)
         #expect(sample.timestamp == harness.clock.now)
+        // The live GPS speed rides along on the point, so the trip-log speed profile can prefer it over
+        // deriving speed from positions.
+        expectClose(try #require(sample.speed), 6, within: 0.01)
+        // And the accumulated distance, so the speed profile shares the height profile's X-axis exactly
+        // instead of re-deriving a noisier one from raw coordinates.
+        expectClose(try #require(sample.distance), 5, within: 0.5)
+    }
+
+    /// CoreLocation reports a negative speed when it can't measure one (e.g. at a standstill). That
+    /// sentinel must not be stored as a real reading — the point keeps `speed == nil` and the speed
+    /// profile derives a value for it instead.
+    @Test(.tags(.edgeCase))
+    func aRouteSampleDropsTheUnknownSpeedSentinel() throws {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        harness.move(meters: 5, speed: -1) // CoreLocation's "unknown speed" sentinel
+
+        let sample = try #require(harness.trip.routeSamples.first)
+        #expect(sample.speed == nil)
     }
 
     /// GPX has no way to say "the height here is unknown", so a fix whose vertical accuracy is unusable
