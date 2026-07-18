@@ -433,7 +433,11 @@ final class TripManager {
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
             altitude: location.usableAltitude(within: Self.maxAltitudeVerticalAccuracy),
-            timestamp: location.timestamp
+            timestamp: location.timestamp,
+            // Negative is CoreLocation's "unknown" sentinel — store nil, not a bogus reading, so the
+            // profile derives speed from the timestamps for that point instead. Clamp the rest to the
+            // same ceiling `maxSpeed` uses, so a glitchy fix can't plant a spike in the recorded track.
+            speed: location.speed >= 0 ? min(location.speed, maxPlausibleSpeed) : nil
         ))
         lastRouteSampleDistance = accumulatedDistance
     }

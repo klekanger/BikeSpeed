@@ -332,24 +332,6 @@
         }
       }
     },
-    "GPX route" : {
-      "comment" : "Prefix for the share-sheet title when exporting a trip as GPX (followed by the trip date). Resolved via AppLanguage.localizedString(forKey:), which the string extractor can't see — hence manual, so it isn't flagged stale.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GPX route"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "GPX-rute"
-          }
-        }
-      }
-    },
     "Fair" : {
       "comment" : "VoiceOver value for a marginal GPS signal.",
       "localizations" : {
@@ -445,6 +427,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GPS-signal"
+          }
+        }
+      }
+    },
+    "GPX route" : {
+      "comment" : "Prefix for the share-sheet title when exporting a trip as GPX (followed by the trip date). Resolved via AppLanguage.localizedString(forKey:), which the string extractor can't see — hence manual, so it isn't flagged stale.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPX route"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPX-rute"
           }
         }
       }
@@ -625,6 +625,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ingen høydedata for denne turen"
+          }
+        }
+      }
+    },
+    "No speed data for this trip" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No speed data for this trip"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen fartsdata for denne turen"
           }
         }
       }
@@ -925,6 +941,25 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Viser %@"
+          }
+        }
+      }
+    },
+    "Speed" : {
+
+    },
+    "Speed profile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speed profile"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fartsprofil"
           }
         }
       }

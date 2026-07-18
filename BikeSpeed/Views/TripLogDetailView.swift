@@ -38,6 +38,9 @@ struct TripLogDetailView: View {
         /// Empty for a trip recorded without usable altitude — including everything saved before
         /// elevation shipped.
         let profile: [AltitudeSample]
+        /// Derived from the track (not stored), so it's present for any trip with a route — the live
+        /// per-point speed on new trips, timestamp-derived on older ones. Empty only without a track.
+        let speedProfile: [SpeedSample]
         /// Empty for a trip with no track — everything saved before route recording shipped.
         let coordinates: [CLLocationCoordinate2D]
         let cameraRect: MKMapRect
@@ -110,6 +113,36 @@ struct TripLogDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
+
+            Section("Speed profile") {
+                if let loaded {
+                    if loaded.speedProfile.isEmpty {
+                        Text("No speed data for this trip")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        // Y in the user's unit (km/h or mph): the model stores m/s, the view converts —
+                        // same split as every other speed on screen. X is distance, matching the height
+                        // profile above so the two charts read against a shared axis.
+                        Chart(loaded.speedProfile, id: \.distance) { sample in
+                            let speed = settingsStore.measurementSystem.speedValue(metersPerSecond: sample.speed)
+                            AreaMark(
+                                x: .value("Distance", sample.distance),
+                                y: .value("Speed", speed)
+                            )
+                            .foregroundStyle(.orange.opacity(0.3))
+                            LineMark(
+                                x: .value("Distance", sample.distance),
+                                y: .value("Speed", speed)
+                            )
+                            .foregroundStyle(.orange)
+                        }
+                        .frame(height: 200)
+                    }
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                }
+            }
         }
         .navigationTitle(entry.startDate.formatted(date: .abbreviated, time: .omitted))
         .navigationBarTitleDisplayMode(.inline)
@@ -144,8 +177,10 @@ struct TripLogDetailView: View {
                       let route = try? TripPayloadCoder.decode([RouteSample].self, from: routeData),
                       !route.isEmpty
                 else {
-                    return Loaded(profile: profile, coordinates: [], cameraRect: .world, gpxFileURL: nil, shareTitle: shareTitle)
+                    return Loaded(profile: profile, speedProfile: [], coordinates: [], cameraRect: .world, gpxFileURL: nil, shareTitle: shareTitle)
                 }
+
+                let speedProfile = SpeedProfile.build(from: route)
 
                 let url = try? GPXExporter.write(
                     route: route,
@@ -156,6 +191,7 @@ struct TripLogDetailView: View {
                 let coordinates = route.map(\.coordinate)
                 return Loaded(
                     profile: profile,
+                    speedProfile: speedProfile,
                     coordinates: coordinates,
                     cameraRect: Self.boundingRect(of: coordinates),
                     gpxFileURL: url,
@@ -312,6 +348,17 @@ private struct RouteMapFullScreenView: View {
     let profile = stride(from: 0.0, through: 12_400.0, by: 200.0).map {
         AltitudeSample(distance: $0, altitude: 100 + 30 * sin($0 / 1000))
     }
+    let start = CLLocationCoordinate2D(latitude: 59.9139, longitude: 10.7522)
+    let previewBase = Date()
+    let route = (0..<200).map { index in
+        RouteSample(
+            latitude: start.latitude + Double(index) * 10 / 111_320,
+            longitude: start.longitude,
+            altitude: 100,
+            timestamp: previewBase.addingTimeInterval(Double(index)),
+            speed: 6.8 + 2.5 * sin(Double(index) / 12)
+        )
+    }
     let trip = StoredTrip(
         id: UUID(),
         startDate: Date(),
@@ -322,7 +369,7 @@ private struct RouteMapFullScreenView: View {
         totalAscent: 312,
         totalDescent: 296,
         altitudeData: try? TripPayloadCoder.encode(profile),
-        routeData: nil,
+        routeData: try? TripPayloadCoder.encode(route),
         updatedAt: Date()
     )
     container.mainContext.insert(trip)
