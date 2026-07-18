@@ -45,18 +45,18 @@ struct TripLogDetailView: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Date", value: entry.startDate.formatted(date: .abbreviated, time: .shortened))
-                LabeledContent("Duration", value: TripDurationFormatting.formatted(seconds: entry.duration, locale: locale))
-                LabeledContent("Distance", value: settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale))
-                LabeledContent("Average speed", value: settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.averageSpeed, locale: locale))
-                LabeledContent("Max speed", value: settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.maxSpeed, locale: locale))
+                infoRow("Date", "calendar", entry.startDate.formatted(date: .abbreviated, time: .shortened))
+                infoRow("Duration", "clock", TripDurationFormatting.formatted(seconds: entry.duration, locale: locale))
+                infoRow("Distance", "point.topleft.down.curvedto.point.bottomright.up", settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale))
+                infoRow("Average speed", "speedometer", settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.averageSpeed, locale: locale))
+                infoRow("Max speed", "gauge.with.dots.needle.100percent", settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.maxSpeed, locale: locale))
                 // Absent, not zero, on trips recorded without altitude data (including anything saved
                 // before v2) — a "0 m" row would claim the ride was flat.
                 if let totalAscent = entry.totalAscent {
-                    LabeledContent("Total ascent", value: settingsStore.measurementSystem.formattedAltitude(meters: totalAscent, locale: locale))
+                    infoRow("Total ascent", "mountain.2.fill", settingsStore.measurementSystem.formattedAltitude(meters: totalAscent, locale: locale))
                 }
                 if let totalDescent = entry.totalDescent {
-                    LabeledContent("Total descent", value: settingsStore.measurementSystem.formattedAltitude(meters: totalDescent, locale: locale))
+                    infoRow("Total descent", "arrow.down.right", settingsStore.measurementSystem.formattedAltitude(meters: totalDescent, locale: locale))
                 }
             }
 
@@ -174,6 +174,23 @@ struct TripLogDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This cannot be undone.")
+        }
+    }
+
+    /// A detail row: an orange leading icon (matching the trip-log summary and the home screen's stat
+    /// icons, so the accent carries across screens) beside the name, value trailing. The icon sits in a
+    /// fixed-width column so titles align across glyphs of different widths.
+    private func infoRow(_ title: LocalizedStringKey, _ systemImage: String, _ value: String) -> some View {
+        LabeledContent {
+            Text(value)
+        } label: {
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: systemImage)
+                    .foregroundStyle(.orange)
+                    .frame(width: 24)
+            }
         }
     }
 
