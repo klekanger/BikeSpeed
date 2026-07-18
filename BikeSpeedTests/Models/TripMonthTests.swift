@@ -11,7 +11,7 @@ struct TripMonthTests {
 
     @Test
     func twoDatesInTheSameMonthShareOneBucket() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let early = TripMonth(containing: try date(2026, 7, 2, in: calendar), calendar: calendar)
         let late = TripMonth(containing: try date(2026, 7, 30, in: calendar), calendar: calendar)
 
@@ -24,7 +24,7 @@ struct TripMonthTests {
     /// year first, so January 2026 is *later* than December 2025 — which is what a newest-first list needs.
     @Test(.tags(.edgeCase))
     func januaryOfTheNextYearSortsLaterThanTheDecemberBefore() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let december = TripMonth(containing: try date(2025, 12, 31, in: calendar), calendar: calendar)
         let january = TripMonth(containing: try date(2026, 1, 1, in: calendar), calendar: calendar)
 
@@ -34,24 +34,12 @@ struct TripMonthTests {
 
     @Test
     func representativeDateLandsInsideTheMonthItNames() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let month = TripMonth(containing: try date(2026, 3, 17, in: calendar), calendar: calendar)
 
         let representative = try #require(month.representativeDate(calendar: calendar))
         let components = calendar.dateComponents([.year, .month], from: representative)
         #expect(components.year == 2026)
         #expect(components.month == 3)
-    }
-
-    // MARK: - Helpers
-
-    private func date(_ year: Int, _ month: Int, _ day: Int, in calendar: Calendar) throws -> Date {
-        try #require(calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12)))
-    }
-
-    private func utcCalendar() -> Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
-        return calendar
     }
 }

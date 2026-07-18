@@ -1,11 +1,11 @@
 import Foundation
-import SwiftUI
 
 /// The date window the trip-log *list* is narrowed to.
 ///
 /// A pure value type in the shape of `TripLogSummary`: `contains(_:now:calendar:)` takes `now` and a
 /// `Calendar` as arguments rather than reading `Date()`/`.current`, so `TripDateRangeTests` can pin every
-/// boundary deterministically instead of testing through SwiftUI.
+/// boundary deterministically instead of testing through SwiftUI. No SwiftUI import: the menu labels live
+/// in the view (`TripLogListView.label(for:)`), keeping this at the model layer's SI/value-type altitude.
 ///
 /// **It filters the list only, never the summary above it.** Lifetime totals and personal bests stay
 /// lifetime whatever range is selected — your top speed is your top speed regardless of which window you
@@ -15,18 +15,6 @@ enum TripDateRange: CaseIterable, Hashable {
     case last7Days
     case last30Days
     case thisYear
-
-    /// The menu/Picker label. A `LocalizedStringKey` handed to `Text` and resolved through the in-app
-    /// language override's locale (`BikeSpeedApp` injects `\.locale`) — deliberately *not*
-    /// `AppLanguage.localizedString(forKey:)`, which is only for `String`-typed code.
-    var titleKey: LocalizedStringKey {
-        switch self {
-        case .all: "All"
-        case .last7Days: "Last 7 days"
-        case .last30Days: "Last 30 days"
-        case .thisYear: "This year"
-        }
-    }
 
     /// Whether a trip that started at `date` falls inside this range as of `now`.
     ///

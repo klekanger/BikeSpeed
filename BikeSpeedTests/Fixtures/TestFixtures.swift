@@ -173,6 +173,22 @@ final class TripTestHarness {
     }
 }
 
+/// A fixed calendar date at noon in `calendar` — the shape every date-driven suite builds its cases from.
+/// Noon keeps a case from sliding across midnight when the calendar isn't UTC.
+func date(_ year: Int, _ month: Int, _ day: Int, in calendar: Calendar) throws -> Date {
+    try #require(calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12)))
+}
+
+/// A UTC Gregorian calendar, so no case turns on the machine's time zone shifting a date across midnight.
+/// `firstWeekday` defaults to Monday (Norway) — the week/month suites pass it explicitly, the range/month
+/// suites don't depend on it.
+func calendar(firstWeekday: Int = 2) -> Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = .gmt
+    calendar.firstWeekday = firstWeekday
+    return calendar
+}
+
 /// Distances and speeds here come out of geodesy and floating-point accumulation, so they are compared
 /// with a tolerance. Failures print both values, which is what you want when one is 49.97.
 func expectClose(

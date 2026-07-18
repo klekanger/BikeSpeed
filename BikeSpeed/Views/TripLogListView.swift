@@ -35,7 +35,10 @@ struct TripLogListView: View {
     /// The rows the current filter admits. `TripDateRange.contains` reads only `startDate` (a scalar), so
     /// filtering never faults in a track — the same reason the list rows themselves stay blob-free.
     private var visibleTrips: [StoredTrip] {
-        trips.filter { dateRange.contains($0.startDate, now: Date(), calendar: .current) }
+        // Hoisted out of the closure: one `Date()` and one `Calendar.current` per pass, not one per trip.
+        let now = Date()
+        let calendar = Calendar.current
+        return trips.filter { dateRange.contains($0.startDate, now: now, calendar: calendar) }
     }
 
     /// `visibleTrips` grouped into calendar-month sections, newest month first. The rows arrive already
@@ -57,6 +60,9 @@ struct TripLogListView: View {
                     ContentUnavailableView("No trips logged yet", systemImage: "list.bullet.clipboard")
                 } else {
                     ScrollViewReader { proxy in
+                        // Filter + group once per body: `sections` drives both the empty check and the
+                        // rows, so the O(N) filter runs a single time rather than once for each.
+                        let sections = monthSections
                         List {
                             // Its own view, not a `@ViewBuilder` helper: its body reduces the whole log
                             // eight times over (three period totals, four personal bests), so as a view
@@ -67,7 +73,7 @@ struct TripLogListView: View {
                             TripLogSummarySection(trips: trips)
                                 .id(Self.topAnchor)
 
-                            if visibleTrips.isEmpty {
+                            if sections.isEmpty {
                                 // The log isn't empty, this window is. Keep the summary and the filter
                                 // reachable so the rider can widen the range rather than think trips vanished.
                                 ContentUnavailableView(
@@ -79,7 +85,7 @@ struct TripLogListView: View {
                             } else {
                                 // One Section per month. Delete offsets index into *that* section's rows,
                                 // so `section.trips[$0]` is the trip to remove, not `visibleTrips[$0]`.
-                                ForEach(monthSections, id: \.month) { section in
+                                ForEach(sections, id: \.month) { section in
                                     Section {
                                         ForEach(section.trips) { trip in
                                             NavigationLink(value: trip) {
@@ -136,7 +142,7 @@ struct TripLogListView: View {
         Menu {
             Picker("Filter", selection: $dateRange) {
                 ForEach(TripDateRange.allCases, id: \.self) { range in
-                    Text(range.titleKey).tag(range)
+                    Text(label(for: range)).tag(range)
                 }
             }
         } label: {
@@ -145,6 +151,18 @@ struct TripLogListView: View {
                 : "line.3.horizontal.decrease.circle.fill")
         }
         .accessibilityLabel(Text("Filter trips"))
+    }
+
+    /// The menu label for each range. Lives in the view, not on `TripDateRange`, so the model stays a
+    /// pure SwiftUI-free value type — the same layering `MeasurementSystem`'s picker and this diff's own
+    /// `TripMonth` already follow.
+    private func label(for range: TripDateRange) -> LocalizedStringKey {
+        switch range {
+        case .all: "All"
+        case .last7Days: "Last 7 days"
+        case .last30Days: "Last 30 days"
+        case .thisYear: "This year"
+        }
     }
 
     /// Identifies the summary row so the jump-to-top button can scroll back to it.

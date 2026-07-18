@@ -11,7 +11,7 @@ struct TripDateRangeTests {
 
     @Test
     func allAcceptsEveryDateHoweverFarAway() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let ancient = try date(1998, 1, 1, in: calendar)
         let future = try date(2099, 12, 31, in: calendar)
 
@@ -23,7 +23,7 @@ struct TripDateRangeTests {
     /// still counts, and one a day older does not.
     @Test(.tags(.edgeCase))
     func last7DaysIncludesTheRideExactlySevenDaysBackAndExcludesTheOneBeyond() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let now = try now() // 2026-07-14 12:00
 
         let sixDaysAgo = try date(2026, 7, 8, in: calendar)
@@ -39,7 +39,7 @@ struct TripDateRangeTests {
     /// `now` — the window looks back, not forward.
     @Test(.tags(.edgeCase))
     func last7DaysExcludesATripDatedAfterNow() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let tomorrow = try date(2026, 7, 15, in: calendar)
 
         #expect(!TripDateRange.last7Days.contains(tomorrow, now: try now(), calendar: calendar))
@@ -47,7 +47,7 @@ struct TripDateRangeTests {
 
     @Test
     func last30DaysSpansThirtyDaysBackButNotThirtyOne() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let now = try now()
 
         #expect(TripDateRange.last30Days.contains(try date(2026, 6, 14, in: calendar), now: now, calendar: calendar))
@@ -58,7 +58,7 @@ struct TripDateRangeTests {
     /// of the year before is out — even though the latter is well within the last few months.
     @Test(.tags(.edgeCase))
     func thisYearIsTheCalendarYearNotARollingWindow() throws {
-        let calendar = utcCalendar()
+        let calendar = calendar()
         let now = try now() // 2026
 
         #expect(TripDateRange.thisYear.contains(try date(2026, 1, 1, in: calendar), now: now, calendar: calendar))
@@ -68,19 +68,9 @@ struct TripDateRangeTests {
 
     // MARK: - Helpers
 
-    /// Tuesday 14 July 2026, noon — the day every window here is reasoned from.
+    /// Tuesday 14 July 2026, noon — the day every window here is reasoned from. `date`/`calendar` are the
+    /// shared fixtures in `TestFixtures.swift`.
     private func now() throws -> Date {
-        try date(2026, 7, 14, in: utcCalendar())
-    }
-
-    private func date(_ year: Int, _ month: Int, _ day: Int, in calendar: Calendar) throws -> Date {
-        try #require(calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12)))
-    }
-
-    /// UTC, so no case turns on the machine's time zone shifting a date across midnight.
-    private func utcCalendar() -> Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
-        return calendar
+        try date(2026, 7, 14, in: calendar())
     }
 }
