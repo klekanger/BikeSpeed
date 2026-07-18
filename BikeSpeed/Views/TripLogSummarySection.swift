@@ -13,6 +13,12 @@ struct TripLogSummarySection: View {
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(\.locale) private var locale
 
+    /// Which pane is showing. Shared by the segmented control and the paged `TabView` below, so a tap
+    /// and a swipe drive the same selection.
+    @State private var pane = Pane.totals
+
+    private enum Pane: Hashable { case totals, bests }
+
     /// **`Calendar.current`, not the in-app language's calendar.** Where the week starts is a fact
     /// about where the rider lives, not which language they read the app in — a Norwegian running
     /// BikeSpeed in English still rides a week that begins on Monday. The device region settles it.
@@ -23,7 +29,32 @@ struct TripLogSummarySection: View {
         // faults in a single track. That's what earns the blob design; don't reach for a payload here.
         let summary = TripLogSummary(entries: trips.map(\.entry), calendar: rideCalendar)
 
-        Section("Totals") {
+        // The segmented control switches the pane in place — the point of the tabs is to spend the
+        // vertical room of one pane, not both stacked. It drives a *paged* `TabView` rather than the
+        // default `Tab` bar, whose floating Liquid Glass bar would sit on top of these rows; page style
+        // gives the swipe with no bar. The `TabView` has no intrinsic height, so it's pinned to one that
+        // fits the taller (Totals) pane; the shorter pane top-aligns and leaves the slack empty.
+        VStack(spacing: 12) {
+            Picker("", selection: $pane) {
+                Text("Totals").tag(Pane.totals)
+                Text("Personal bests").tag(Pane.bests)
+            }
+            .pickerStyle(.segmented)
+
+            TabView(selection: $pane) {
+                totalsPane(summary).tag(Pane.totals)
+                bestsPane(summary).tag(Pane.bests)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: 176)
+        }
+        .padding(.vertical, 4)
+        .listRowSeparator(.hidden)
+    }
+
+    @ViewBuilder
+    private func totalsPane(_ summary: TripLogSummary) -> some View {
+        rows {
             LabeledContent("Rides", value: summary.allTime.rideCount.formatted(.number.locale(locale)))
             LabeledContent("Total distance", value: distance(summary.allTime.distance))
             LabeledContent("Total time", value: TripDurationFormatting.formatted(seconds: summary.allTime.duration, locale: locale))
@@ -35,8 +66,11 @@ struct TripLogSummarySection: View {
             LabeledContent("This week", value: distance(summary.thisWeek.distance))
             LabeledContent("This month", value: distance(summary.thisMonth.distance))
         }
+    }
 
-        Section("Personal bests") {
+    @ViewBuilder
+    private func bestsPane(_ summary: TripLogSummary) -> some View {
+        rows {
             if let longest = summary.personalBests.longestRide {
                 LabeledContent("Longest ride", value: distance(longest.distance))
             }
@@ -52,6 +86,16 @@ struct TripLogSummarySection: View {
                 LabeledContent("Biggest climb", value: altitude(ascent))
             }
         }
+    }
+
+    /// One pane's `LabeledContent` rows, stacked (a page isn't a `List`, so nothing lays them out
+    /// otherwise) and pinned to the top of the fixed-height `TabView`.
+    @ViewBuilder
+    private func rows(@ViewBuilder _ content: () -> some View) -> some View {
+        VStack(spacing: 8) {
+            content()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func distance(_ meters: CLLocationDistance) -> String {
