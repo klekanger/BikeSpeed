@@ -55,16 +55,16 @@ struct TripLogSummarySection: View {
     @ViewBuilder
     private func totalsPane(_ summary: TripLogSummary) -> some View {
         rows {
-            LabeledContent("Rides", value: summary.allTime.rideCount.formatted(.number.locale(locale)))
-            LabeledContent("Total distance", value: distance(summary.allTime.distance))
-            LabeledContent("Total time", value: TripDurationFormatting.formatted(seconds: summary.allTime.duration, locale: locale))
+            statRow("Rides", "bicycle", summary.allTime.rideCount.formatted(.number.locale(locale)))
+            statRow("Total distance", "point.topleft.down.curvedto.point.bottomright.up", distance(summary.allTime.distance))
+            statRow("Total time", "clock", TripDurationFormatting.formatted(seconds: summary.allTime.duration, locale: locale))
             // Hidden, not "0 m", when no ride ever recorded a climb — every trip saved before elevation
             // shipped has no ascent figure at all, and a zero here would call them flat.
             if summary.allTime.ascent > 0 {
-                LabeledContent("Total ascent", value: altitude(summary.allTime.ascent))
+                statRow("Total ascent", "mountain.2.fill", altitude(summary.allTime.ascent))
             }
-            LabeledContent("This week", value: distance(summary.thisWeek.distance))
-            LabeledContent("This month", value: distance(summary.thisMonth.distance))
+            statRow("This week", "calendar", distance(summary.thisWeek.distance))
+            statRow("This month", "calendar", distance(summary.thisMonth.distance))
         }
     }
 
@@ -72,24 +72,42 @@ struct TripLogSummarySection: View {
     private func bestsPane(_ summary: TripLogSummary) -> some View {
         rows {
             if let longest = summary.personalBests.longestRide {
-                LabeledContent("Longest ride", value: distance(longest.distance))
+                statRow("Longest ride", "point.topleft.down.curvedto.point.bottomright.up", distance(longest.distance))
             }
             if let fastest = summary.personalBests.fastestAverage {
-                LabeledContent("Fastest average", value: speed(fastest.averageSpeed))
+                statRow("Fastest average", "speedometer", speed(fastest.averageSpeed))
             }
             if let quickest = summary.personalBests.highestMaxSpeed {
-                LabeledContent("Top speed", value: speed(quickest.maxSpeed))
+                statRow("Top speed", "gauge.with.dots.needle.100percent", speed(quickest.maxSpeed))
             }
             // Absent, not zero, when nothing in the log ever recorded altitude: no climbing record to
             // hold, rather than a 0 m one.
             if let ascent = summary.personalBests.biggestClimb?.totalAscent {
-                LabeledContent("Biggest climb", value: altitude(ascent))
+                statRow("Biggest climb", "mountain.2.fill", altitude(ascent))
             }
         }
     }
 
-    /// One pane's `LabeledContent` rows, stacked (a page isn't a `List`, so nothing lays them out
-    /// otherwise) and pinned to the top of the fixed-height `TabView`.
+    /// A summary row: an orange leading icon (matching the home screen's `StatCell` icons, so the log
+    /// carries the same accent) beside the name, with the value trailing.
+    private func statRow(_ title: LocalizedStringKey, _ systemImage: String, _ value: String) -> some View {
+        LabeledContent {
+            Text(value)
+        } label: {
+            Label {
+                Text(title)
+            } icon: {
+                // Fixed-width icon column so titles line up regardless of glyph width — `bicycle` and
+                // `mountain.2.fill` are far wider than `clock`, and without this the labels stagger.
+                Image(systemName: systemImage)
+                    .foregroundStyle(.orange)
+                    .frame(width: 24)
+            }
+        }
+    }
+
+    /// One pane's stat rows, stacked (a page isn't a `List`, so nothing lays them out otherwise) and
+    /// pinned to the top of the fixed-height `TabView`.
     @ViewBuilder
     private func rows(@ViewBuilder _ content: () -> some View) -> some View {
         VStack(spacing: 8) {

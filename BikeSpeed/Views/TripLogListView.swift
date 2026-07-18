@@ -69,8 +69,18 @@ struct TripLogListView: View {
             Text(entry.startDate.formatted(date: .abbreviated, time: .shortened))
                 .font(.headline)
             HStack(spacing: 12) {
-                Label(settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale), systemImage: "point.topleft.down.curvedto.point.bottomright.up")
-                Label(TripDurationFormatting.formatted(seconds: entry.duration, locale: locale), systemImage: "clock")
+                // Icon orange (echoing the home screen's stat icons), text secondary — a touch of the
+                // app's accent in the otherwise all-grey list.
+                Label {
+                    Text(settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale))
+                } icon: {
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up").foregroundStyle(.orange)
+                }
+                Label {
+                    Text(TripDurationFormatting.formatted(seconds: entry.duration, locale: locale))
+                } icon: {
+                    Image(systemName: "clock").foregroundStyle(.orange)
+                }
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
