@@ -21,6 +21,10 @@ struct TripLogDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isShowingDeleteConfirmation = false
+    /// Drives the full-screen interactive map cover. The embedded preview stays non-interactive (see
+    /// `routeMap`); tapping it opens *this* instead, where panning/zooming has the whole screen and
+    /// can't fight the Form's scroll.
+    @State private var isShowingFullScreenMap = false
     /// Loaded in `.task`, not read off `trip` in the body: both payloads are external-storage blobs,
     /// and touching either on this actor would fault the file in and decode it on the run loop — the
     /// cost the trip *list* is built never to pay. Nil while loading.
@@ -69,6 +73,13 @@ struct TripLogDetailView: View {
                     routeMap(for: loaded)
                         .frame(height: 240)
                         .listRowInsets(EdgeInsets())
+                        // The preview's own map takes no gestures (`interactionModes: []`), so this tap
+                        // reaches the row; `contentShape` makes the whole frame — not just the drawn
+                        // pixels — the hit target.
+                        .contentShape(Rectangle())
+                        .onTapGesture { isShowingFullScreenMap = true }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityLabel("Open full-screen map")
                 }
             }
 
@@ -183,6 +194,11 @@ struct TripLogDetailView: View {
         } message: {
             Text("This cannot be undone.")
         }
+        .fullScreenCover(isPresented: $isShowingFullScreenMap) {
+            if let loaded {
+                RouteMapFullScreenView(coordinates: loaded.coordinates, cameraRect: loaded.cameraRect)
+            }
+        }
     }
 
     /// A detail row: an orange leading icon (matching the trip-log summary and the home screen's stat
@@ -203,20 +219,20 @@ struct TripLogDetailView: View {
     }
 
     /// The track, framed to itself. Interaction is off deliberately: inside a `Form` a pannable map
-    /// swallows the vertical drag meant for the page — the ride is being looked at, not explored, and
-    /// the GPX export is there for anyone who wants more.
+    /// swallows the vertical drag meant for the page. Tapping the row instead opens the full-screen
+    /// interactive map (`RouteMapFullScreenView`), where exploring the ride doesn't fight the scroll.
+    /// The corner glyph advertises that the static preview is a doorway to it.
     private func routeMap(for track: Loaded) -> some View {
         Map(initialPosition: .rect(track.cameraRect), interactionModes: []) {
-            MapPolyline(coordinates: track.coordinates)
-                .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-            if let start = track.coordinates.first {
-                Marker("Start", systemImage: "flag", coordinate: start)
-                    .tint(.green)
-            }
-            if let finish = track.coordinates.last {
-                Marker("Finish", systemImage: "flag.checkered", coordinate: finish)
-                    .tint(.red)
-            }
+            routeMapContent(for: track.coordinates)
+        }
+        .overlay(alignment: .topTrailing) {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.primary)
+                .padding(6)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .padding(8)
         }
     }
 
@@ -246,6 +262,49 @@ struct TripLogDetailView: View {
         formatter.dateFormat = "yyyy-MM-dd-HHmm"
         return formatter
     }()
+}
+
+/// The orange polyline plus start/finish flags — the single source of truth for how a track draws,
+/// shared by the Form's static preview and the full-screen interactive map so the two never drift.
+@MapContentBuilder
+private func routeMapContent(for coordinates: [CLLocationCoordinate2D]) -> some MapContent {
+    MapPolyline(coordinates: coordinates)
+        .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+    if let start = coordinates.first {
+        Marker("Start", systemImage: "flag", coordinate: start)
+            .tint(.green)
+    }
+    if let finish = coordinates.last {
+        Marker("Finish", systemImage: "flag.checkered", coordinate: finish)
+            .tint(.red)
+    }
+}
+
+/// The recorded track on a fully interactive, full-screen map — the counterpart to the Form's static
+/// preview. It gets its own cover precisely because zoom/pan needs room the embedded map can't give it
+/// without hijacking the detail form's scroll. Same `cameraRect` as the preview, so it opens framed to
+/// the ride and the user zooms out from there. MapKit rendering is free on Apple platforms, so this
+/// costs nothing beyond the tiles the preview already draws.
+private struct RouteMapFullScreenView: View {
+    let coordinates: [CLLocationCoordinate2D]
+    let cameraRect: MKMapRect
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Map(initialPosition: .rect(cameraRect)) {
+                routeMapContent(for: coordinates)
+            }
+            .ignoresSafeArea(edges: .bottom)
+            .navigationTitle("Route")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
 }
 
 #Preview {
