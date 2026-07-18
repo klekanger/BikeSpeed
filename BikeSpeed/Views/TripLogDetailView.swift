@@ -40,6 +40,10 @@ struct TripLogDetailView: View {
         /// The GPX backing the share sheet. `ShareLink` needs a URL that already exists, so it can't
         /// be built lazily at tap time.
         let gpxFileURL: URL?
+        /// Title shown at the top of the share sheet. iOS hides the file's known `.gpx` extension from
+        /// the sheet's title, so without this the header reads as a bare date; this spells out the
+        /// export type. Built with the in-app locale alongside `trackName`, not derived in `body`.
+        let shareTitle: String
     }
 
     var body: some View {
@@ -107,6 +111,9 @@ struct TripLogDetailView: View {
                 Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale)
             )
             let fileName = "BikeSpeed-\(Self.fileNameDateFormatter.string(from: entry.startDate))"
+            // Resolved via AppLanguage so it honours the in-app language override; `trackName` (the
+            // localized date) rides along after it.
+            let shareTitle = "\(settingsStore.appLanguage.localizedString(forKey: "GPX route")) – \(trackName)"
 
             // Reads only the two blob columns (`propertiesToFetch`), off the main actor, handing back
             // bytes — a `@Model` could not cross this boundary and doesn't need to.
@@ -126,7 +133,7 @@ struct TripLogDetailView: View {
                       let route = try? TripPayloadCoder.decode([RouteSample].self, from: routeData),
                       !route.isEmpty
                 else {
-                    return Loaded(profile: profile, coordinates: [], cameraRect: .world, gpxFileURL: nil)
+                    return Loaded(profile: profile, coordinates: [], cameraRect: .world, gpxFileURL: nil, shareTitle: shareTitle)
                 }
 
                 let url = try? GPXExporter.write(
@@ -140,16 +147,17 @@ struct TripLogDetailView: View {
                     profile: profile,
                     coordinates: coordinates,
                     cameraRect: Self.boundingRect(of: coordinates),
-                    gpxFileURL: url
+                    gpxFileURL: url,
+                    shareTitle: shareTitle
                 )
             }.value
 
             loaded = prepared
         }
         .toolbar {
-            if let gpxFileURL = loaded?.gpxFileURL {
+            if let loaded, let gpxFileURL = loaded.gpxFileURL {
                 ToolbarItem(placement: .primaryAction) {
-                    ShareLink(item: gpxFileURL) {
+                    ShareLink(item: gpxFileURL, preview: SharePreview(loaded.shareTitle)) {
                         Label("Export GPX", systemImage: "square.and.arrow.up")
                     }
                 }
