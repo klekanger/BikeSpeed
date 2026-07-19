@@ -56,7 +56,7 @@ struct TripLogDetailView: View {
     var body: some View {
         Form {
             Section {
-                infoRow("Date", "calendar", entry.startDate.formatted(date: .abbreviated, time: .shortened))
+                infoRow("Date", "calendar", entry.startDate.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(locale)))
                 infoRow("Duration", "clock", TripDurationFormatting.formatted(seconds: entry.duration, locale: locale))
                 infoRow("Distance", "point.topleft.down.curvedto.point.bottomright.up", settingsStore.measurementSystem.formattedDistance(meters: entry.distance, locale: locale))
                 infoRow("Average speed", "speedometer", settingsStore.measurementSystem.formattedSpeed(metersPerSecond: entry.averageSpeed, locale: locale))
@@ -144,7 +144,7 @@ struct TripLogDetailView: View {
                 }
             }
         }
-        .navigationTitle(entry.startDate.formatted(date: .abbreviated, time: .omitted))
+        .navigationTitle(entry.startDate.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(locale)))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             let id = entry.id
