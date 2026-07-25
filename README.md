@@ -15,7 +15,8 @@ A fullscreen iPhone speedometer for your bike, styled after 80s-car analog dashb
 - **GPS signal indicator** — a top-left glyph tinted green/yellow/red for signal quality; when the signal is too poor to trust, speed and distance freeze rather than drift on noise
 - **Trip controls** — Start, Pause/Resume, Save, and Reset, so you can pause a ride, save a finished one to your trip log, and reset cleanly for a new one
 - **Background recording** — a trip keeps recording when the screen locks or you switch apps, so you can pocket the phone mid-ride without losing the trip
-- **Trip log** — completed trips are saved with date, duration, distance, average/max speed, total ascent/descent, a route map, and height-profile and speed-profile charts plotted against distance; up top, switch between your lifetime totals and personal bests (longest ride, fastest average, top speed, biggest climb) with a tap or swipe; browse past trips and delete ones you don't want to keep
+- **Trip log** — completed trips are saved with date, duration, distance, average/max speed, total ascent/descent, a route map, and height-profile and speed-profile charts plotted against distance; up top, switch between your lifetime totals and personal bests (longest ride, fastest average, top speed, biggest climb) with a tap or swipe
+- **Built for hundreds of rides** — trips are grouped into month sections, newest first, with a date-range filter (All, Last 7 days, Last 30 days, This year) and a jump-to-top button once you've scrolled down; swipe a row to delete a ride you don't want to keep
 - **iCloud sync** — your trip log syncs automatically to your private iCloud database, so your rides, routes, and personal bests follow you across your own iPhones with nothing to set up
 - **Settings** — set your own max gauge speed, switch between metric (km/h) and imperial (mph) units, toggle auto-pause, and override the app's display language independent of your device setting
 - **Built for the handlebar** — runs fullscreen with the home indicator hidden, and keeps the screen from sleeping while you ride
@@ -25,10 +26,10 @@ A fullscreen iPhone speedometer for your bike, styled after 80s-car analog dashb
 
 1. Mount your iPhone on your handlebar with a case/mount that keeps the screen visible and portrait-oriented.
 2. Open BikeSpeed and allow location access when prompted — this is required for the speedometer, GPS position, and direction indicator to work. Allow Motion & Fitness too if you want barometer-accurate climb figures; without it, climb still works from GPS.
-3. Open the gear icon in the top-right corner to set your preferred max gauge speed, units (metric/imperial), auto-pause, and display language before you start riding.
+3. Tap the gear in the control pill at the top-right to set your preferred max gauge speed, units (metric/imperial), auto-pause, and display language before you start riding.
 4. Tap **Start** to begin tracking a trip. Average speed, distance, and climb begin accumulating from this point, and recording continues even if the screen locks.
 5. Stop at a light and the trip pauses itself (auto-pause), resuming when you ride on, so your average speed stays accurate — no stats are reset. You can also tap **Pause** to stop manually, and **Resume** to continue.
-6. When you're done, tap **Pause/Stop** and then **Save** to add the trip to your trip log (open it via the clock icon in the top-right corner), or **Reset** to discard it and start fresh. Reset is only available once the trip is manually paused, so you can't accidentally lose an in-progress ride.
+6. When you're done, tap **Pause/Stop** and then **Save** to add the trip to your trip log (open it via the list icon in the same pill), or **Reset** to discard it and start fresh. Reset is only available once the trip is manually paused, so you can't accidentally lose an in-progress ride.
 
 ## Running your own copy
 
