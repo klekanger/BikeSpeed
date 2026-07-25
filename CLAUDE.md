@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-BikeSpeed is a fullscreen iPhone bike speedometer: an 80s-car-style analog gauge showing live GPS speed, plus average/max speed, distance, duration, altitude, climb and live gradient, GPS position, and direction of travel, with Start/Pause/Reset trip controls (and auto-pause) and a Settings screen for max gauge speed, metric/imperial units and the auto-pause toggle. Trips record in the background, capture a route track and height profile, and are saved to a trip log with a map, a GPX export, and lifetime/personal-best aggregates. Portrait only, status bar/home-indicator hidden, screen-sleep disabled — designed to run mounted on a bike handlebar.
+BikeSpeed is a fullscreen iPhone bike speedometer: an 80s-car-style analog gauge showing live GPS speed, plus average/max speed, distance, duration, altitude, climb and live gradient, GPS position, and direction of travel, with Start/Pause/Reset trip controls (and auto-pause) and a Settings screen for max gauge speed, metric/imperial units and the auto-pause toggle. Trips record in the background, capture a route track and height profile, and are saved to a trip log with a map, a GPX export, and lifetime/personal-best aggregates. Portrait only, home indicator hidden, screen-sleep disabled — designed to run mounted on a bike handlebar. The **status bar stays visible** (`persistentSystemOverlays(.hidden)` in `ContentView` hides only the home indicator, and nothing sets `UIStatusBarHidden`): a rider wants the clock and battery, so this is deliberate, not an oversight to "fix".
 
 Localized in English and Norwegian (`nb`) via String Catalogs, following device language.
 
