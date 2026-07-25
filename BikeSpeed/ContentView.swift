@@ -33,11 +33,13 @@ struct ContentView: View {
 
                 StatsPanel(
                     trip: TripStats(
+                        state: tripManager.state,
                         averageSpeed: tripManager.averageSpeed,
                         maxSpeed: tripManager.maxSpeed,
                         distance: tripManager.accumulatedDistance,
                         duration: tripManager.elapsedActiveDuration,
                         totalAscent: tripManager.totalAscent,
+                        totalDescent: tripManager.totalDescent,
                         grade: tripManager.currentGrade,
                         isAutoPaused: tripManager.isAutoPaused
                     ),

@@ -5,11 +5,13 @@ import CoreLocation
 /// both `Double`, so nothing but the label tells them apart, and the panel's parameter list would
 /// only grow as stats are added.
 struct TripStats {
+    let state: TripState
     let averageSpeed: Double // m/s
     let maxSpeed: Double // m/s
     let distance: Double // meters
     let duration: TimeInterval // seconds of active (moving) time; auto-paused time is excluded
     let totalAscent: Double? // meters; nil until any usable altitude has arrived — not the same as 0
+    let totalDescent: Double? // meters, positive; nil on the same terms as `totalAscent`
     let grade: Double? // rise/run, e.g. 0.05 for 5 %; nil until the trip has ridden a window's worth
     let isAutoPaused: Bool
 }
@@ -23,9 +25,44 @@ struct LocationReadout {
     let streetName: String? // nil until reverse geocoding resolves one
 }
 
+/// The altitude cell's readouts, in page order. Climb and descent are *trip* stats, so they only
+/// appear once a trip has started: before that they have nothing to report and would sit at "--" for
+/// the whole ride-up, two dead pages between the two live ones. They stay for a paused trip — a rider
+/// stopped at the top of a hill hasn't stopped caring how much they climbed, and it's the number to
+/// look at before saving.
+enum AltitudeCellPage: CaseIterable {
+    case altitude
+    case climb
+    case descent
+    case position
+
+    static func pages(tripState: TripState) -> [AltitudeCellPage] {
+        tripState == .idle ? [.altitude, .position] : allCases
+    }
+
+    var name: LocalizedStringKey {
+        switch self {
+        case .altitude: "Altitude"
+        case .climb: "Climb"
+        case .descent: "Descent"
+        case .position: "Position"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .altitude: "mountain.2"
+        case .climb: "arrow.up.right"
+        case .descent: "arrow.down.right"
+        case .position: "location"
+        }
+    }
+}
+
 /// The 2×2 stats grid under the gauge, in the same brushed-metal bezel as the speedometer. Cells,
 /// clockwise from top-left: average speed, direction of travel, distance, altitude. All but the
-/// direction cell hold a second readout (max speed, duration, GPS position) reached by tap or swipe.
+/// direction cell hold further readouts (max speed, duration, climb, descent, GPS position) reached
+/// by tap or swipe — see `AltitudeCellPage` for the one cell whose page set isn't fixed.
 struct StatsPanel: View {
     let trip: TripStats
     let location: LocationReadout
@@ -37,12 +74,13 @@ struct StatsPanel: View {
 
     @State private var speedPage = 0
     @State private var distancePage = 0
-    @State private var altitudePage = 0
+    /// The altitude cell alone is held as the readout rather than as an index, because its page set
+    /// changes with the trip state — an index would point at a different readout after a Start, and
+    /// off the end of the array after a Reset.
+    @State private var altitudePage: AltitudeCellPage = .altitude
 
     private var showingMaxSpeed: Bool { speedPage == 1 }
     private var showingDuration: Bool { distancePage == 1 }
-    private var showingClimb: Bool { altitudePage == 1 }
-    private var showingPosition: Bool { altitudePage == 2 }
 
     private let cornerRadius: CGFloat = 24
     private let bezelWidth: CGFloat = 5
@@ -114,27 +152,55 @@ struct StatsPanel: View {
     /// a blank line wouldn't say what it is.
     private var altitudeCell: StatCell {
         StatCell(
-            systemImage: showingPosition ? "location" : (showingClimb ? "arrow.up.right" : "mountain.2"),
+            systemImage: currentAltitudePage.systemImage,
             value: altitudeCellValue,
             captionContent: altitudeCaption,
-            paging: .init(page: $altitudePage, names: ["Altitude", "Climb", "Position"]),
+            paging: .init(page: altitudePageIndex, names: altitudePages.map(\.name)),
             pageIndicatorInset: bottomRowIndicatorInset
         )
     }
 
+    private var altitudePages: [AltitudeCellPage] {
+        AltitudeCellPage.pages(tripState: trip.state)
+    }
+
+    /// A Reset takes climb and descent away underneath whoever was reading one, so the page the cell
+    /// *shows* falls back to altitude while `altitudePage` keeps what the rider chose — start another
+    /// trip and their readout comes back.
+    private var currentAltitudePage: AltitudeCellPage {
+        altitudePages.contains(altitudePage) ? altitudePage : .altitude
+    }
+
+    /// `StatCell` pages by index (dots, wrap-around, the swipe); the cell's state is the readout. This
+    /// is the join between the two, and the reason no index ever outlives the page set it came from.
+    private var altitudePageIndex: Binding<Int> {
+        let pages = altitudePages
+        let selection = $altitudePage
+        let current = currentAltitudePage
+        return Binding(
+            get: { pages.firstIndex(of: current) ?? 0 },
+            set: { selection.wrappedValue = pages[$0] }
+        )
+    }
+
     private var altitudeCaption: StatCell.Caption {
-        guard showingClimb == false, showingPosition == false, let formattedGrade else { return .name }
+        guard currentAltitudePage == .altitude, let formattedGrade else { return .name }
         return .data(formattedGrade)
     }
 
     private var altitudeCellValue: String {
-        if showingPosition { return formattedPosition }
-        if showingClimb {
-            // "--" like the altitude readout below, not "0 m": a trip with no altitude data hasn't
-            // measured a flat ride, it hasn't measured anything.
+        // "--" rather than "0 m" throughout: a trip with no altitude data hasn't measured a flat
+        // ride, it hasn't measured anything.
+        switch currentAltitudePage {
+        case .altitude:
+            return location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+        case .climb:
             return trip.totalAscent.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+        case .descent:
+            return trip.totalDescent.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+        case .position:
+            return formattedPosition
         }
-        return location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
     }
 
     /// "▲ 4 %" climbing, "▼ 4 %" descending, bare "0 %" on the flat. Rounded to whole percent (a
@@ -182,11 +248,13 @@ struct StatsPanel: View {
         Color.black
         StatsPanel(
             trip: TripStats(
+                state: .running,
                 averageSpeed: 6.86,
                 maxSpeed: 11.4,
                 distance: 28_560,
                 duration: 4_324,
                 totalAscent: 312,
+                totalDescent: 287,
                 grade: 0.042,
                 isAutoPaused: false
             ),
