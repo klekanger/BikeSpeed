@@ -5,14 +5,14 @@
 //  Created by Kurt Lekanger on 04/07/2026.
 //
 
+import SwiftData
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var locationManager: LocationManager
-    @EnvironmentObject private var addressLookupManager: AddressLookupManager
-    @EnvironmentObject private var settingsStore: SettingsStore
-    @EnvironmentObject private var tripManager: TripManager
-    @EnvironmentObject private var tripLogStore: TripLogStore
+    @Environment(LocationManager.self) private var locationManager
+    @Environment(AddressLookupManager.self) private var addressLookupManager
+    @Environment(SettingsStore.self) private var settingsStore
+    @Environment(TripManager.self) private var tripManager
 
     @State private var isShowingSettings = false
     @State private var isShowingTripLog = false
@@ -37,12 +37,16 @@ struct ContentView: View {
                         maxSpeed: tripManager.maxSpeed,
                         distance: tripManager.accumulatedDistance,
                         duration: tripManager.elapsedActiveDuration,
+                        totalAscent: tripManager.totalAscent,
+                        grade: tripManager.currentGrade,
                         isAutoPaused: tripManager.isAutoPaused
                     ),
                     location: LocationReadout(
                         altitude: locationManager.altitude,
                         coordinate: locationManager.coordinate,
-                        course: locationManager.course,
+                        // Not `course`: it goes stale the moment the rider stops. `travelDirection` hands
+                        // over to the compass at a standstill — see `LocationManager`.
+                        course: locationManager.travelDirection,
                         streetName: addressLookupManager.streetName
                     ),
                     measurementSystem: settingsStore.measurementSystem,
@@ -68,23 +72,11 @@ struct ContentView: View {
 
                     Spacer()
 
-                    Button("Trip Log", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90") {
-                        isShowingTripLog = true
-                    }
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.secondary)
+                    TopControlCluster(
+                        onTripLog: { isShowingTripLog = true },
+                        onSettings: { isShowingSettings = true }
+                    )
                     .padding(12)
-                    .buttonStyle(.plain)
-
-                    Button("Settings", systemImage: "gearshape.fill") {
-                        isShowingSettings = true
-                    }
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.secondary)
-                    .padding(12)
-                    .buttonStyle(.plain)
                 }
                 Spacer()
             }
@@ -99,7 +91,7 @@ struct ContentView: View {
             SettingsView(settings: settingsStore)
         }
         .sheet(isPresented: $isShowingTripLog) {
-            TripLogListView(store: tripLogStore)
+            TripLogListView()
         }
     }
 }
@@ -107,12 +99,14 @@ struct ContentView: View {
 #Preview {
     let locationManager = LocationManager()
     let settingsStore = SettingsStore()
+    let container = try! TripModelContainer.inMemory()
 
     ContentView()
-        .environmentObject(locationManager)
-        .environmentObject(AddressLookupManager(locationManager: locationManager))
-        .environmentObject(settingsStore)
-        .environmentObject(TripManager(locationManager: locationManager, settings: settingsStore))
-        .environmentObject(MotionManager())
-        .environmentObject(TripLogStore())
+        .environment(locationManager)
+        .environment(AddressLookupManager(locationManager: locationManager))
+        .environment(settingsStore)
+        .environment(TripManager(locationManager: locationManager, altimeter: AltimeterManager(), settings: settingsStore))
+        .environment(MotionManager())
+        .environment(TripDataStack(container: container))
+        .modelContainer(container)
 }

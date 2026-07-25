@@ -1,23 +1,26 @@
 import CoreLocation
 import Foundation
 
-/// A saved, completed trip. All measurements are stored in SI units (meters, m/s, seconds),
-/// matching the convention used throughout the model layer — the view layer converts via
-/// `MeasurementSystem` for display, same as the live trip stats.
-struct TripLogEntry: Codable, Identifiable, Hashable {
+/// A saved, completed trip — the *scalar* summary of one. All measurements in SI units (meters, m/s,
+/// seconds), like the rest of the model layer; the view layer converts via `MeasurementSystem` for display.
+///
+/// The domain value, not the row: `StoredTrip` is what SwiftData persists, this is what the pure code speaks
+/// — what `TripLogSummary` reduces, what the list draws, and (being `Codable`) what a future web service
+/// would put on the wire unchanged.
+///
+/// **The heavy per-trip payloads are deliberately not here.** The height profile and track are
+/// hundreds-to-thousands of samples each and the list draws neither; they live as blobs on `StoredTrip`,
+/// loaded off the main actor only when a trip's detail opens. Folding either back in would put every trip's
+/// payload into every render of the list.
+struct TripLogEntry: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     let startDate: Date
     let duration: TimeInterval // seconds, active duration only
     let distance: CLLocationDistance // meters
     let averageSpeed: CLLocationSpeed // m/s
     let maxSpeed: CLLocationSpeed // m/s
-    let altitudeProfile: [AltitudeSample]
-}
-
-/// One point of a trip's height profile. `distance` is the accumulated trip distance-so-far at
-/// the moment this sample was taken (not a timestamp), since it's monotonic and unaffected by
-/// pause gaps — the natural X-axis for an elevation chart.
-struct AltitudeSample: Codable, Hashable {
-    let distance: CLLocationDistance // meters
-    let altitude: CLLocationDistance // meters
+    /// Nil, not zero: a trip without usable altitude data has no answer to "how much did you climb", and 0
+    /// would be indistinguishable from a genuinely flat ride.
+    let totalAscent: CLLocationDistance? // meters
+    let totalDescent: CLLocationDistance? // meters, positive
 }

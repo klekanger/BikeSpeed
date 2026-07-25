@@ -1,35 +1,36 @@
 import Combine
 import CoreLocation
 import MapKit
+import Observation
 
 /// Reverse-geocodes accepted GPS fixes into the name of the street the rider is currently on.
 ///
-/// Subscribes to `LocationManager`'s accepted fixes itself (like `TripManager` does), so it only
-/// ever sees positions that passed the accuracy filter, and it stays live regardless of trip state.
+/// Subscribes to `LocationManager`'s accepted fixes (like `TripManager`), so it only sees positions past
+/// the accuracy filter and stays live regardless of trip state.
 ///
-/// Reverse geocoding is a network call and `CLGeocoder` throttles callers that ask too often, so a
-/// lookup only fires once the rider has moved `minimumDistanceMeters` *and* `minimumLookupInterval`
-/// has passed since the previous attempt. At 20 km/h, 75 m apart is only ~13 seconds — the time
-/// gate is what keeps a real ride from being throttled. Apple's throttle is per device (there's no
-/// API key and no shared per-developer quota, unlike MapKit JS), so this is about protecting one
-/// rider's session, not a resource shared across users.
+/// Reverse geocoding is a network call and `CLGeocoder` throttles callers that ask too often, so a lookup
+/// fires only once the rider has moved `minimumDistanceMeters` *and* `minimumLookupInterval` has passed
+/// since the last attempt. At 20 km/h, 75 m is ~13 s, so the time gate is what keeps a real ride from being
+/// throttled. The throttle is per device (no API key or shared quota, unlike MapKit JS) — this protects one
+/// rider's session, not a shared resource.
 ///
-/// Consecutive failures back the interval off exponentially up to `maximumLookupInterval`: if we
-/// *are* being throttled, retrying at a fixed 10 s only keeps us throttled.
+/// Consecutive failures back the interval off exponentially up to `maximumLookupInterval`: if we *are*
+/// throttled, retrying at a fixed 10 s only keeps us throttled.
 @MainActor
-final class AddressLookupManager: ObservableObject {
-    /// The street the rider is currently on, or nil when unknown — no lookup has resolved yet, or
-    /// the position is genuinely off-road. Held at its last value across geocoding *failures*
-    /// rather than blanking, since a network blip is no reason to throw away a good answer.
-    @Published private(set) var streetName: String?
+@Observable
+final class AddressLookupManager {
+    /// The street the rider is on, or nil when unknown (nothing resolved yet, or genuinely off-road). Held
+    /// at its last value across geocoding *failures* — a network blip is no reason to drop a good answer.
+    private(set) var streetName: String?
 
-    private var cancellable: AnyCancellable?
-    /// Position of the last *resolved* lookup — the anchor the distance gate measures against.
-    private var lastLookupLocation: CLLocation?
-    /// Time of the last *attempt*, resolved or not; this is what the interval gate measures against.
-    private var lastLookupAttempt: Date?
-    private var isLookupInProgress = false
-    private var consecutiveFailures = 0
+    /// All untracked: the lookup gates are internal bookkeeping; `streetName` is the only thing views draw.
+    @ObservationIgnored private var cancellable: AnyCancellable?
+    /// Position of the last *resolved* lookup — anchor for the distance gate.
+    @ObservationIgnored private var lastLookupLocation: CLLocation?
+    /// Time of the last *attempt*, resolved or not — anchor for the interval gate.
+    @ObservationIgnored private var lastLookupAttempt: Date?
+    @ObservationIgnored private var isLookupInProgress = false
+    @ObservationIgnored private var consecutiveFailures = 0
 
     private let minimumDistanceMeters: CLLocationDistance = 75
     private let minimumLookupInterval: TimeInterval = 10
@@ -41,8 +42,8 @@ final class AddressLookupManager: ObservableObject {
         }
     }
 
-    /// How long to wait before the next attempt: the base interval while things are healthy,
-    /// doubling per consecutive failure (10 s → 20 s → 40 s …) up to `maximumLookupInterval`.
+    /// Wait before the next attempt: base interval while healthy, doubling per consecutive failure
+    /// (10 s → 20 s → 40 s …) up to `maximumLookupInterval`.
     private var currentLookupInterval: TimeInterval {
         min(minimumLookupInterval * pow(2, Double(consecutiveFailures)), maximumLookupInterval)
     }
@@ -66,13 +67,12 @@ final class AddressLookupManager: ObservableObject {
             do {
                 resolve(try await reverseGeocode(location), at: location)
             } catch let error as CLError where error.code == .geocodeFoundNoResult {
-                // Not a failure — there genuinely is no street here (a trail, or out at sea). It's a
-                // resolved "nothing", so blank the caption and let the gates advance as usual.
+                // Not a failure — genuinely no street here (trail, or out at sea). A resolved "nothing":
+                // blank the caption and let the gates advance.
                 resolve(nil, at: location)
             } catch {
-                // Network down, or the geocoder is throttling us. Keep showing the last street we
-                // did resolve, and leave `lastLookupLocation` where it was so the next fix retries —
-                // but back off first, so a throttle doesn't turn into us hammering every 10 s.
+                // Network down or throttled. Keep the last resolved street and leave `lastLookupLocation`
+                // put so the next fix retries — but back off first, so a throttle doesn't become hammering.
                 consecutiveFailures += 1
             }
         }
@@ -81,8 +81,8 @@ final class AddressLookupManager: ObservableObject {
     private func resolve(_ street: String?, at location: CLLocation) {
         lastLookupLocation = location
         consecutiveFailures = 0
-        // Riding one street spans many lookup windows, so most resolutions repeat the last answer.
-        // Only publish real changes — every write invalidates the whole ContentView tree.
+        // One street spans many lookup windows, so most resolutions repeat the last answer. Publish only
+        // real changes — every write invalidates the whole ContentView tree.
         if streetName != street {
             streetName = street
         }
@@ -96,14 +96,13 @@ final class AddressLookupManager: ObservableObject {
         }
     }
 
-    /// `shortAddress` is the only street-bearing string MapKit offers — `MKAddress` exposes just
-    /// `fullAddress`/`shortAddress`, and `MKAddressRepresentations` only adds city/region — so the
-    /// street has to be picked out of a formatted address by hand.
+    /// `shortAddress` is the only street-bearing string MapKit offers (`MKAddress` exposes only
+    /// `fullAddress`/`shortAddress`; `MKAddressRepresentations` only adds city/region), so the street has
+    /// to be picked out of a formatted address by hand.
     ///
-    /// Known difference from the legacy path: with no street nearby, `shortAddress` falls back to a
-    /// broader place name ("Nord-Atlanteren" out at sea, a park name on a trail) where
-    /// `thoroughfare` would simply be nil. That's a reasonable thing to show on a bike, so it's left
-    /// alone — just don't expect the two paths to blank out at the same moment.
+    /// Differs from the legacy path: with no street nearby, `shortAddress` falls back to a broader place
+    /// name ("Nord-Atlanteren" at sea, a park name on a trail) where `thoroughfare` is simply nil. Fine to
+    /// show on a bike, so left alone — just don't expect the two paths to blank at the same moment.
     @available(iOS 26.0, *)
     private func modernStreetName(for location: CLLocation) async throws -> String? {
         guard let request = MKReverseGeocodingRequest(location: location) else { return nil }
@@ -118,11 +117,11 @@ final class AddressLookupManager: ObservableObject {
     }
 
     /// Reduces a formatted short address to just the street, so the modern path matches the bare
-    /// `thoroughfare` the legacy path returns. `shortAddress` carries a locality ("Stockton St,
-    /// San Francisco") and a house number, neither of which is useful at a glance on a handlebar.
+    /// `thoroughfare` the legacy path returns. `shortAddress` carries a locality ("Stockton St, San
+    /// Francisco") and a house number, neither useful at a glance on a handlebar.
     ///
-    /// The house number sits on whichever side the locale puts it — leading in the US
-    /// ("1-99 Stockton St"), trailing in Norway ("Storgata 12") — so both ends are trimmed.
+    /// The house number sits on whichever side the locale puts it — leading in the US ("1-99 Stockton St"),
+    /// trailing in Norway ("Storgata 12") — so both ends are trimmed.
     private static func streetComponent(of shortAddress: String) -> String? {
         var parts = shortAddress.prefix { $0 != "," }.split(separator: " ")
         if parts.count > 1, isHouseNumber(parts[0]) {
@@ -136,9 +135,9 @@ final class AddressLookupManager: ObservableObject {
         return result.isEmpty ? nil : result
     }
 
-    /// Whether a token is a house number rather than part of the street's name. Numbers can be
-    /// ranged or suffixed ("1-99", "12B"), but a street genuinely named with a numeral — "5th
-    /// Avenue" — carries more than one letter, which is what tells the two apart.
+    /// Whether a token is a house number rather than part of the street name. House numbers can be ranged
+    /// or suffixed ("1-99", "12B"); a numeral-named street ("5th Avenue") carries more than one letter,
+    /// which tells the two apart.
     private static func isHouseNumber(_ token: Substring) -> Bool {
         guard let first = token.first, first.isNumber else { return false }
         return token.filter(\.isLetter).count <= 1

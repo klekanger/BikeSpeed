@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- Merged into the generated Info.plist (GENERATE_INFOPLIST_FILE stays YES). This file exists only
+     for keys that have no INFOPLIST_KEY_* build-setting equivalent — everything else belongs in
+     project.pbxproj. It lives outside the synchronized BikeSpeed/ folder on purpose: inside it,
+     Xcode would also copy it as a bundle resource and the build would fail with two Info.plists. -->
+<dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>

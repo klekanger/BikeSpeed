@@ -1,10 +1,14 @@
-import Combine
 import Foundation
+import Observation
 
-/// Persists user-configurable settings via UserDefaults. Values are always stored in a canonical
-/// unit (km/h for the gauge max) so the meaning of a stored number never depends on the current
-/// display unit.
-final class SettingsStore: ObservableObject {
+/// Persists user-configurable settings via UserDefaults. Values are stored in a canonical unit (km/h
+/// for the gauge max) so a stored number's meaning never depends on the current display unit.
+///
+/// The `didSet` writes are the whole persistence mechanism; they survive `@Observable` because the macro
+/// leaves the observer on the stored property it generates behind each. Not obvious enough to trust
+/// silently — `SettingsStoreTests.settingsSurviveARelaunch` pins it.
+@Observable
+final class SettingsStore {
     private enum Keys {
         static let maxGaugeSpeedKMH = "maxGaugeSpeedKMH"
         static let measurementSystem = "measurementSystem"
@@ -12,31 +16,34 @@ final class SettingsStore: ObservableObject {
         static let autoPauseEnabled = "autoPauseEnabled"
     }
 
-    @Published var maxGaugeSpeedKMH: Double {
-        didSet { UserDefaults.standard.set(maxGaugeSpeedKMH, forKey: Keys.maxGaugeSpeedKMH) }
+    var maxGaugeSpeedKMH: Double {
+        didSet { defaults.set(maxGaugeSpeedKMH, forKey: Keys.maxGaugeSpeedKMH) }
     }
 
-    @Published var measurementSystem: MeasurementSystem {
-        didSet { UserDefaults.standard.set(measurementSystem.rawValue, forKey: Keys.measurementSystem) }
+    var measurementSystem: MeasurementSystem {
+        didSet { defaults.set(measurementSystem.rawValue, forKey: Keys.measurementSystem) }
     }
 
-    @Published var appLanguage: AppLanguage {
-        didSet { UserDefaults.standard.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
+    var appLanguage: AppLanguage {
+        didSet { defaults.set(appLanguage.rawValue, forKey: Keys.appLanguage) }
     }
 
-    @Published var autoPauseEnabled: Bool {
-        didSet { UserDefaults.standard.set(autoPauseEnabled, forKey: Keys.autoPauseEnabled) }
+    var autoPauseEnabled: Bool {
+        didSet { defaults.set(autoPauseEnabled, forKey: Keys.autoPauseEnabled) }
     }
 
-    init() {
-        let defaults = UserDefaults.standard
+    @ObservationIgnored private let defaults: UserDefaults
+
+    /// Injectable so tests get a throwaway suite instead of reading and writing the real shared defaults.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         maxGaugeSpeedKMH = (defaults.object(forKey: Keys.maxGaugeSpeedKMH) as? Double) ?? 60
         measurementSystem = defaults.string(forKey: Keys.measurementSystem)
             .flatMap(MeasurementSystem.init(rawValue:)) ?? .metric
         appLanguage = defaults.string(forKey: Keys.appLanguage)
             .flatMap(AppLanguage.init(rawValue:)) ?? .system
-        // `object(forKey:)`, not `bool(forKey:)`: the latter reports an unset key as `false`, which
-        // is indistinguishable from a deliberate off and would quietly defeat the default-on.
+        // `object(forKey:)`, not `bool(forKey:)`: the latter reports an unset key as `false`,
+        // indistinguishable from a deliberate off, which would defeat the default-on.
         autoPauseEnabled = (defaults.object(forKey: Keys.autoPauseEnabled) as? Bool) ?? true
     }
 }

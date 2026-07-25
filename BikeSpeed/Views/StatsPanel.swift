@@ -1,14 +1,16 @@
 import SwiftUI
 import CoreLocation
 
-/// What the trip has accumulated so far. A value rather than five loose arguments: `distance` and
-/// `duration` are both `Double` underneath, so nothing but the argument label tells them apart, and
-/// the panel's parameter list only grows as stats are added.
+/// What the trip has accumulated so far. A value, not loose arguments: `distance` and `duration` are
+/// both `Double`, so nothing but the label tells them apart, and the panel's parameter list would
+/// only grow as stats are added.
 struct TripStats {
     let averageSpeed: Double // m/s
     let maxSpeed: Double // m/s
     let distance: Double // meters
     let duration: TimeInterval // seconds of active (moving) time; auto-paused time is excluded
+    let totalAscent: Double? // meters; nil until any usable altitude has arrived — not the same as 0
+    let grade: Double? // rise/run, e.g. 0.05 for 5 %; nil until the trip has ridden a window's worth
     let isAutoPaused: Bool
 }
 
@@ -21,10 +23,9 @@ struct LocationReadout {
     let streetName: String? // nil until reverse geocoding resolves one
 }
 
-/// The 2×2 stats grid shown under the gauge, wrapped in the same brushed-metal bezel as the
-/// speedometer. Cells, clockwise from top-left: average speed, direction of travel, distance,
-/// altitude. All but the direction cell hold a second readout — max speed, duration, GPS position —
-/// that a tap or a horizontal swipe pages to, and their page indicators are what say so.
+/// The 2×2 stats grid under the gauge, in the same brushed-metal bezel as the speedometer. Cells,
+/// clockwise from top-left: average speed, direction of travel, distance, altitude. All but the
+/// direction cell hold a second readout (max speed, duration, GPS position) reached by tap or swipe.
 struct StatsPanel: View {
     let trip: TripStats
     let location: LocationReadout
@@ -32,7 +33,7 @@ struct StatsPanel: View {
     let appLanguage: AppLanguage
 
     @Environment(\.locale) private var locale
-    @EnvironmentObject private var motionManager: MotionManager
+    @Environment(MotionManager.self) private var motionManager
 
     @State private var speedPage = 0
     @State private var distancePage = 0
@@ -40,7 +41,8 @@ struct StatsPanel: View {
 
     private var showingMaxSpeed: Bool { speedPage == 1 }
     private var showingDuration: Bool { distancePage == 1 }
-    private var showingPosition: Bool { altitudePage == 1 }
+    private var showingClimb: Bool { altitudePage == 1 }
+    private var showingPosition: Bool { altitudePage == 2 }
 
     private let cornerRadius: CGFloat = 24
     private let bezelWidth: CGFloat = 5
@@ -78,8 +80,8 @@ struct StatsPanel: View {
         )
     }
 
-    /// The street name takes over the caption line; until one resolves the line stays blank rather
-    /// than falling back to a label — the arrow and compass letter carry the cell alone.
+    /// The street name takes over the caption line; until one resolves the line stays blank (no
+    /// label fallback) — the arrow and compass letter carry the cell alone.
     private var directionCell: StatCell {
         StatCell(
             systemImage: "location.north.fill",
@@ -106,18 +108,51 @@ struct StatsPanel: View {
         )
     }
 
+    /// The altitude page carries the live gradient in its caption line, like the direction cell's
+    /// street: data in place of the name. But the gradient is nil more often than not (standstill,
+    /// window not yet full), so nil falls back to the page's name, not a blank — a bare number over
+    /// a blank line wouldn't say what it is.
     private var altitudeCell: StatCell {
         StatCell(
-            systemImage: showingPosition ? "location" : "mountain.2",
-            value: showingPosition ? formattedPosition : (location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"),
-            paging: .init(page: $altitudePage, names: ["Altitude", "Position"]),
+            systemImage: showingPosition ? "location" : (showingClimb ? "arrow.up.right" : "mountain.2"),
+            value: altitudeCellValue,
+            captionContent: altitudeCaption,
+            paging: .init(page: $altitudePage, names: ["Altitude", "Climb", "Position"]),
             pageIndicatorInset: bottomRowIndicatorInset
         )
     }
 
-    /// The bezel is stroked over the panel's outer edge, so it eats into the bottom row's cells in a
-    /// way the hairline divider above them doesn't. Without this the bottom dots would read as
-    /// crowded against the bezel while the top row's sat comfortably above the divider.
+    private var altitudeCaption: StatCell.Caption {
+        guard showingClimb == false, showingPosition == false, let formattedGrade else { return .name }
+        return .data(formattedGrade)
+    }
+
+    private var altitudeCellValue: String {
+        if showingPosition { return formattedPosition }
+        if showingClimb {
+            // "--" like the altitude readout below, not "0 m": a trip with no altitude data hasn't
+            // measured a flat ride, it hasn't measured anything.
+            return trip.totalAscent.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+        }
+        return location.altitude.map { measurementSystem.formattedAltitude(meters: $0, locale: locale) } ?? "--"
+    }
+
+    /// "▲ 4 %" climbing, "▼ 4 %" descending, bare "0 %" on the flat. Rounded to whole percent (a
+    /// gradient's decimals are noise to a rider) *before* the arrow is chosen: the raw sign flaps
+    /// around zero on flat ground, and pairing it with a rounded magnitude would show a
+    /// self-contradictory "▼ 0 %".
+    private var formattedGrade: String? {
+        guard let grade = trip.grade else { return nil }
+        let wholePercent = (abs(grade) * 100).rounded()
+        let magnitude = (wholePercent / 100).formatted(.percent.precision(.fractionLength(0)).locale(locale))
+        guard wholePercent > 0 else { return magnitude }
+        let arrow = grade < 0 ? "▼" : "▲"
+        return "\(arrow) \(magnitude)"
+    }
+
+    /// The bezel is stroked over the panel's outer edge, eating into the bottom row's cells in a way
+    /// the hairline divider above them doesn't. Without this extra inset the bottom dots would read
+    /// as crowded against the bezel while the top row's sat clear above the divider.
     private var bottomRowIndicatorInset: CGFloat {
         StatCell.defaultPageIndicatorInset + bezelWidth
     }
@@ -151,6 +186,8 @@ struct StatsPanel: View {
                 maxSpeed: 11.4,
                 distance: 28_560,
                 duration: 4_324,
+                totalAscent: 312,
+                grade: 0.042,
                 isAutoPaused: false
             ),
             location: LocationReadout(
@@ -164,7 +201,7 @@ struct StatsPanel: View {
         )
         .frame(height: 260)
         .padding()
-        .environmentObject(MotionManager())
+        .environment(MotionManager())
     }
     .ignoresSafeArea()
 }

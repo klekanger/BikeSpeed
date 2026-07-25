@@ -17,10 +17,10 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Looks up `key` in `Localizable.xcstrings`, forcing this language's `.lproj` bundle rather
-    /// than the ambient environment locale. `String(localized:locale:)` was observed to ignore its
-    /// `locale:` override for this project's compiled String Catalog and always resolve against
-    /// the device's system language instead — this bypasses that by loading the bundle directly.
+    /// Looks up `key` in `Localizable.xcstrings`, forcing this language's `.lproj` bundle. Needed because
+    /// `String(localized:locale:)` was observed to ignore its `locale:` override for this project's compiled
+    /// String Catalog and always resolve against the device language; loading the bundle directly bypasses
+    /// that.
     func localizedString(forKey key: String) -> String {
         guard let locale,
               let path = Bundle.main.path(forResource: locale.identifier, ofType: "lproj"),

@@ -1,11 +1,10 @@
 import SwiftUI
 
-/// Draws the static dial: background, tick marks, numeric labels, and the danger-zone arc.
-/// Deliberately separate from the needle so the (comparatively expensive) Canvas redraw only
-/// happens when `maxSpeed` changes or `tilt` drifts, not on every GPS update. `tilt` is a small,
-/// heavily-smoothed accelerometer vector (see `MotionManager`) that nudges the metallic gradients
-/// so the bezel/face look like they catch light as the phone moves — it is already throttled and
-/// low-pass filtered upstream, so redrawing on every change stays cheap.
+/// Draws the static dial: background, tick marks, numeric labels, danger-zone arc. Separate from the
+/// needle so the (comparatively expensive) Canvas redraw only fires when `maxSpeed` changes or `tilt`
+/// drifts, not on every GPS update. `tilt` is a small, heavily-smoothed accelerometer vector (see
+/// `MotionManager`) that nudges the metallic gradients so the bezel/face catch light as the phone
+/// moves — already throttled and low-pass filtered upstream, so redrawing on every change stays cheap.
 struct GaugeFaceView: View {
     let maxSpeed: Double
     var tilt: CGSize = .zero
@@ -16,11 +15,10 @@ struct GaugeFaceView: View {
     private let sweepAngle: Double = 270
     private let minorPerMajor = 5
     private let dangerStartFraction = 0.85
-    /// Candidate spacings for major ticks, ascending — always a "nice" round number so labels
-    /// read as multiples of 5, 10, 25, etc. rather than of whatever `maxSpeed` happens to be.
+    /// Candidate major-tick spacings, ascending — always "nice" round numbers so labels read as
+    /// multiples of 5, 10, 25, etc. rather than of whatever `maxSpeed` happens to be.
     private let majorStepCandidates: [Double] = [5, 10, 15, 20, 25, 50, 100]
-    /// Upper bound on the number of major ticks, so the scale doesn't get too fine-grained
-    /// for large `maxSpeed` values.
+    /// Upper bound on major-tick count, so the scale doesn't get too fine-grained at large `maxSpeed`.
     private let maxMajorDivisions = 10.0
 
     var body: some View {
@@ -76,10 +74,10 @@ struct GaugeFaceView: View {
         context.stroke(path, with: .color(.orange), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
     }
 
-    /// Picks the finest step (from `majorStepCandidates`) that still keeps the major tick
-    /// count at or below `maxMajorDivisions`. The step need not evenly divide `maxSpeed` —
-    /// ticks are placed by their actual fraction of the scale, so the last one or two minor
-    /// ticks before the top of the dial may simply be omitted, same as on a real gauge.
+    /// The finest step (from `majorStepCandidates`) that keeps the major-tick count at or below
+    /// `maxMajorDivisions`. The step need not evenly divide `maxSpeed` — ticks are placed by their
+    /// actual fraction of the scale, so the last one or two minor ticks before the top of the dial
+    /// may simply be omitted, same as on a real gauge.
     private func majorStep(for maxSpeed: Double) -> Double {
         let minStep = maxSpeed / maxMajorDivisions
         return majorStepCandidates.first(where: { $0 >= minStep }) ?? majorStepCandidates.last!
