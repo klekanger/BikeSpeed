@@ -4,6 +4,8 @@ A fullscreen iPhone speedometer for your bike, styled after 80s-car analog dashb
 
 ![BikeSpeed mounted on a handlebar](docs/images/on-bike.webp)
 
+Android version (ported to Kotlin with Claude Code / Fable 5) is located here: [https://github.com/klekanger/BikeSpeed-Android](https://github.com/klekanger/BikeSpeed-Android)
+
 ## Features
 
 - **Analog speed gauge** — a live GPS-driven needle on a 270° dial, with a configurable max speed and a red danger zone near the top, plus a digital speed readout in the center
