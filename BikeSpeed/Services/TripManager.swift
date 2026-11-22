@@ -398,11 +398,19 @@ final class TripManager {
             return
         }
 
+        // A step under the floor holds the anchor rather than moving it, so slow riding — less than the
+        // floor per fix — adds up until the rider has carried it past the floor, instead of every step
+        // being measured afresh from the last discarded fix and the whole ride reading zero. A parked
+        // bike's fix wanders around one point, so its distance from a held anchor never crosses the
+        // floor (`wanderingAroundOnePointStaysAtZero`). The fix still counts as accepted, so it clears
+        // the teleport streak just as `anchor(on:)` would have.
         let advanced = delta > max(jitterFloor, 0.5 * location.horizontalAccuracy)
         if advanced {
             accumulatedDistance += delta
+            anchor(on: location)
+        } else {
+            teleportRejections = 0
         }
-        anchor(on: location)
 
         if let altitude = location.usableAltitude(within: Self.maxAltitudeVerticalAccuracy),
            accumulatedDistance - lastAltitudeSampleDistance >= altitudeSampleDistanceInterval {
