@@ -12,6 +12,7 @@ Localized in English and Norwegian (`nb`) via String Catalogs, following device 
 
 The repo must be readable by developers who know only English.
 - Everything committed is in English: code comments, documentation (including reports under `docs/`), commit messages, and identifiers (variables, functions, types, test names, file names). The only Norwegian in the repo is the `nb` translations in the String Catalogs.
+- Screenshots committed as documentation should show the English UI. Switch the app's language before taking them; the simulator's device language is Norwegian. Unless the screenshot is meant to show the Norwegian localization.
 - Reply to the user in the language they write in. A question asked in Norwegian gets a Norwegian answer, but anything written to the repo is still in English.
 
 ## Commands
