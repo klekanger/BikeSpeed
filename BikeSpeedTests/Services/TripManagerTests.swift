@@ -227,6 +227,38 @@ struct TripManagerTests {
         #expect(harness.trip.accumulatedDistance == 0)
     }
 
+    /// Riding slower than the floor per fix is still riding: steps under the floor must add up once
+    /// they've carried the rider past it, not each be measured afresh from the last discarded fix.
+    @Test(.tags(.edgeCase))
+    func smallStepsUnderTheJitterFloorAccumulate() {
+        let harness = TripTestHarness()
+        harness.anchor()
+        harness.trip.start()
+
+        // 2 m/s (7.2 km/h) against a 2.5 m floor.
+        for _ in 0..<10 {
+            harness.move(meters: 2, horizontalAccuracy: 5)
+        }
+
+        expectClose(harness.trip.accumulatedDistance, 20, within: 1)
+    }
+
+    /// The case the floor exists for: a parked bike's fix wanders back and forth around one point, and
+    /// that must never add up to distance however long it goes on.
+    @Test(.tags(.edgeCase))
+    func wanderingAroundOnePointStaysAtZero() {
+        let harness = TripTestHarness(autoPauseEnabled: false)
+        harness.anchor()
+        harness.trip.start()
+
+        for _ in 0..<10 {
+            harness.move(meters: 1, speed: 0, horizontalAccuracy: 5)
+            harness.move(meters: -1, speed: 0, horizontalAccuracy: 5)
+        }
+
+        #expect(harness.trip.accumulatedDistance == 0)
+    }
+
     // MARK: - Teleport guard
 
     @Test(.tags(.edgeCase))
