@@ -17,8 +17,10 @@ import Foundation
 /// readings, so the same pass runs for both. A long ride is then decimated to a chart-appropriate density.
 ///
 /// Pure and `nonisolated` on purpose: `TripLogDetailView` runs this inside a `Task.detached` alongside the
-/// track decode, keeping an O(samples) pass off the main actor.
-enum SpeedProfile {
+/// track decode, keeping an O(samples) pass off the main actor. The *type* is marked, not just its
+/// functions, so the constants are nonisolated too — under `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` a
+/// bare `static let` would otherwise be main-actor-isolated and unreadable from `build(from:)`.
+nonisolated enum SpeedProfile {
     /// Mirrors `TripManager`'s teleport guard (120 km/h). A GPS jitter between two samples can imply an
     /// absurd derived speed; clamp it so one bad point can't blow out the chart's Y-axis.
     static let maxPlausibleSpeed: CLLocationSpeed = 120 / 3.6
@@ -42,7 +44,7 @@ enum SpeedProfile {
 
     /// Builds the profile. Empty for a track too short to define a single segment — the chart then shows
     /// its "no data" state, exactly as the height profile does for a trip without altitude.
-    nonisolated static func build(from route: [RouteSample]) -> [SpeedSample] {
+    static func build(from route: [RouteSample]) -> [SpeedSample] {
         guard route.count >= 2 else { return [] }
 
         // (distance at this point, speed there). Distance is the stored accumulated distance where present,
@@ -98,7 +100,7 @@ enum SpeedProfile {
 
     /// A centred moving average over `smoothingWindow` points. Centred (not trailing) so the curve doesn't
     /// lag the ride; the window shrinks at the two ends rather than inventing points beyond them.
-    private nonisolated static func smoothed(
+    private static func smoothed(
         _ raw: [(distance: CLLocationDistance, speed: CLLocationSpeed)]
     ) -> [SpeedSample] {
         let half = smoothingWindow / 2
@@ -113,7 +115,7 @@ enum SpeedProfile {
 
     /// Thins an over-long series to at most `maxChartPoints` by an even stride, always keeping the final
     /// point so the chart still reaches the trip's full distance. Short rides pass through untouched.
-    private nonisolated static func decimated(_ samples: [SpeedSample]) -> [SpeedSample] {
+    private static func decimated(_ samples: [SpeedSample]) -> [SpeedSample] {
         guard samples.count > maxChartPoints else { return samples }
         let stride = Int((Double(samples.count) / Double(maxChartPoints)).rounded(.up))
         var result = samples.enumerated().compactMap { $0.offset.isMultiple(of: stride) ? $0.element : nil }
@@ -126,7 +128,7 @@ enum SpeedProfile {
     /// Great-circle distance between two samples, in meters. A plain `Double` haversine rather than
     /// `CLLocation.distance(from:)`, which would allocate two `CLLocation` objects per segment — thousands
     /// on a long ride — for a legacy-only fallback path.
-    private nonisolated static func haversineMeters(from: RouteSample, to: RouteSample) -> CLLocationDistance {
+    private static func haversineMeters(from: RouteSample, to: RouteSample) -> CLLocationDistance {
         let earthRadius = 6_371_000.0 // meters
         let lat1 = from.latitude * .pi / 180
         let lat2 = to.latitude * .pi / 180
