@@ -8,6 +8,12 @@ BikeSpeed is a fullscreen iPhone bike speedometer: an 80s-car-style analog gauge
 
 Localized in English and Norwegian (`nb`) via String Catalogs, following device language.
 
+## Language
+
+The repo must be readable by developers who know only English.
+- Everything committed is in English: code comments, documentation (including reports under `docs/`), commit messages, and identifiers (variables, functions, types, test names, file names). The only Norwegian in the repo is the `nb` translations in the String Catalogs.
+- Reply to the user in the language they write in. A question asked in Norwegian gets a Norwegian answer, but anything written to the repo is still in English.
+
 ## Commands
 
 Build from the command line (targets the iOS Simulator; the project has no macOS destination):
